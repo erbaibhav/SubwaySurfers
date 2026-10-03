@@ -62,6 +62,7 @@ const ui = {
   lobby: document.getElementById('lobby-ui'),
   room: document.getElementById('room-ui'),
   game: document.getElementById('game-ui'),
+  btnQuit: document.getElementById('btn-quit'),
   playerNameInput: document.getElementById('player-name'),
   roomCodeInput: document.getElementById('room-code'),
   btnCreate: document.getElementById('btn-create'),
@@ -152,6 +153,8 @@ ui.btnSolo.addEventListener('click', () => {
   state.rng = new SeededRandom(Math.floor(state.seed * 1000000));
   startGameCountdown();
 });
+
+ui.btnQuit.addEventListener('click', () => { window.location.reload(); });
 
 ui.btnStart.addEventListener('click', () => { state.socket.emit('startGame'); });
 ui.btnRestart.addEventListener('click', () => { 
@@ -697,6 +700,7 @@ function startGameCountdown() {
   ui.lobby.classList.add('hide');
   ui.room.classList.add('hide');
   ui.game.classList.remove('hide');
+  ui.btnQuit.classList.remove('hide');
   state.gameState = 'countdown';
   
   if (ui.stage.clientWidth && ui.stage.clientHeight) {
