@@ -16,7 +16,8 @@ const io = new Server(server, {
 // Serve the Vite static build in production
 app.use(express.static(join(__dirname, 'dist')));
 
-app.get('*', (req, res) => {
+// Catch-all route for SPA (Express 5 compatible)
+app.use((req, res) => {
   res.sendFile(join(__dirname, 'dist', 'index.html'));
 });
 
