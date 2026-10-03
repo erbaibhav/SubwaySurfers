@@ -137,9 +137,9 @@ button.alt {
   border-radius: 14px;
   overflow: hidden;
   background: #87CEEB;
-  /* Fixed height or aspect ratio for the game view */
-  height: 60vh;
-  min-height: 400px;
+  /* Flex 1 to fill vertical space */
+  flex: 1;
+  min-height: 0;
 }
 
 #stage canvas {

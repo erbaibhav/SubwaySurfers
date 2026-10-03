@@ -33,6 +33,9 @@ const state = {
   score: 0,
   coinsCollected: 0,
   alive: true,
+  lives: 3,
+  invincible: false,
+  blinkInterval: null,
   seed: 0,
   rng: null,
   speed: 20,
@@ -71,6 +74,7 @@ const ui = {
   waitingMessage: document.getElementById('waiting-message'),
   scoreDisplay: document.getElementById('scorePill'),
   coinDisplay: document.getElementById('coinPill'),
+  livesDisplay: document.getElementById('livesPill'),
   rankDisplay: document.getElementById('rankPill'),
   countdownDisplay: document.getElementById('banner'),
   leaderboardList: document.getElementById('leaderboard-list'),
@@ -712,8 +716,12 @@ function startGameCountdown() {
     else {
       clearInterval(interval);
       ui.countdownDisplay.innerHTML = '';
+      if (state.blinkInterval) clearInterval(state.blinkInterval);
+      playerRig.visible = true;
       state.gameState = 'playing';
       state.alive = true;
+      state.lives = 3;
+      state.invincible = false;
       state.score = 0;
       state.coinsCollected = 0;
       state.distance = 0;
@@ -723,6 +731,8 @@ function startGameCountdown() {
       state.magnetTimer = 0;
       ui.scoreDisplay.innerText = '⭐ 0';
       ui.coinDisplay.innerText = '🪙 0';
+      ui.livesDisplay.innerText = '❤️ 3';
+      document.getElementById('game-over-ui').classList.add('hide');
     }
   }, 1000);
 }
@@ -764,15 +774,41 @@ function checkCollisions() {
         }
       }
 
-      state.alive = false;
-      state.gameState = 'gameover';
-      // Camera shake
-      camera.position.y += 0.5;
-      camera.rotation.z += 0.1;
-      
-      showGameOver();
-      if (!state.isSolo) state.socket.emit('updatePlayer', { alive: false, score: state.score });
-      return;
+      if (state.invincible) continue;
+
+      state.lives--;
+      ui.livesDisplay.innerText = '❤️ ' + state.lives;
+
+      if (state.lives <= 0) {
+        state.alive = false;
+        state.gameState = 'gameover';
+        // Camera shake
+        camera.position.y += 0.5;
+        camera.rotation.z += 0.1;
+        
+        showGameOver();
+        if (!state.isSolo) state.socket.emit('updatePlayer', { alive: false, score: state.score });
+        return;
+      } else {
+        // Lost a life, keep running with invincibility
+        state.invincible = true;
+        // Visual blink
+        let blinks = 0;
+        if (state.blinkInterval) clearInterval(state.blinkInterval);
+        state.blinkInterval = setInterval(() => {
+          playerRig.visible = !playerRig.visible;
+          blinks++;
+          if (blinks >= 10) {
+            clearInterval(state.blinkInterval);
+            playerRig.visible = true;
+            state.invincible = false;
+          }
+        }, 200);
+        
+        // Minor camera shake
+        camera.position.y += 0.3;
+        if (!state.isSolo) state.socket.emit('updatePlayer', { alive: true, score: state.score });
+      }
     }
   }
   
@@ -804,7 +840,9 @@ function checkCollisions() {
 }
 
 function showGameOver() {
-  ui.countdownDisplay.innerHTML = `<b>Game Over</b><br><span>Score: ${Math.floor(state.score)}</span>`;
+  ui.countdownDisplay.innerHTML = '';
+  document.getElementById('game-over-ui').classList.remove('hide');
+  document.getElementById('final-score').innerText = Math.floor(state.score);
   ui.btnRestart.innerText = state.isSolo ? 'Retry' : 'Back to menu';
   ui.btnRestart.classList.remove('hide');
 }
