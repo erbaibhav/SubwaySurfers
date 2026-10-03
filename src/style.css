@@ -1,0 +1,267 @@
+:root {
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  --bg: #f4f1ea;
+  --fg: #1d1b18;
+  --card: #fff;
+  --acc: #e8590c;
+  --mut: #7a746b;
+  --bd: #d8d2c4;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15130f;
+    --fg: #f1ede4;
+    --card: #211e18;
+    --acc: #ff8a3d;
+    --mut: #a39c8e;
+    --bd: #3a352b;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #15130f;
+  --fg: #f1ede4;
+  --card: #211e18;
+  --acc: #ff8a3d;
+  --mut: #a39c8e;
+  --bd: #3a352b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font: 16px/1.4 system-ui, sans-serif;
+  display: flex;
+  justify-content: center;
+}
+
+main {
+  width: 100%;
+  max-width: 440px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+h1 {
+  font-size: 22px;
+  margin: 4px 0;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--bd);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+input, button {
+  font: inherit;
+  padding: 11px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--bd);
+  background: var(--bg);
+  color: var(--fg);
+}
+
+button {
+  background: var(--acc);
+  color: #fff;
+  border: 0;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+button.alt {
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--bd);
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+}
+
+.row > * {
+  flex: 1;
+  min-width: 0;
+}
+
+.code {
+  font: 700 34px/1 ui-monospace, monospace;
+  letter-spacing: .2em;
+  text-align: center;
+  padding: 8px;
+}
+
+.mut {
+  color: var(--mut);
+  font-size: 14px;
+}
+
+.pl {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--bd);
+}
+
+.hide {
+  display: none !important;
+}
+
+#stage {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #87CEEB;
+  /* Fixed height or aspect ratio for the game view */
+  height: 60vh;
+  min-height: 400px;
+}
+
+#stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.pill {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(15, 15, 25, 0.55);
+  color: #fff;
+  font: 800 13px system-ui;
+  padding: 6px 11px;
+  border-radius: 999px;
+  backdrop-filter: blur(3px);
+  z-index: 10;
+}
+
+#pause {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: rgba(15, 15, 25, 0.55);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 700 15px system-ui;
+  cursor: pointer;
+  z-index: 10;
+}
+
+#rankPill {
+  top: 10px;
+  left: 10px;
+}
+
+#scorePill {
+  top: 10px;
+  right: 10px;
+  font: 900 18px system-ui;
+}
+
+#coinPill {
+  top: 48px;
+  right: 10px;
+  color: #ffd60a;
+}
+
+#topRun {
+  top: 84px;
+  right: 10px;
+  flex-direction: column;
+  align-items: flex-end;
+  background: transparent;
+  padding: 0;
+  gap: 1px;
+}
+
+#topRun .av {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #f76707, #ffd60a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 900 13px system-ui;
+  color: #fff;
+  border: 2px solid #fff;
+}
+
+#boostWrap {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 15, 25, 0.55);
+  padding: 6px 10px;
+  border-radius: 999px;
+  z-index: 10;
+}
+
+#boostBar {
+  width: 70px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+#boostFill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #4cc9f0, #f76707);
+}
+
+#banner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 6px;
+  color: #fff;
+  font: 900 15px system-ui;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+  text-align: center;
+  z-index: 20;
+}
+
+#banner b {
+  font-size: 5rem;
+}

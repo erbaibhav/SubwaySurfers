@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Last Runner Standing</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <main>
+    <h1>🏃 Last Runner Standing</h1>
+    
+    <!-- Lobby UI (Create/Join) -->
+    <section id="lobby-ui" class="card">
+      <input type="text" id="player-name" maxlength="14" placeholder="Your name">
+      <button id="btn-create">Create room</button>
+      <div class="mut" style="text-align:center">or join a friend's room</div>
+      <div class="row">
+        <input type="text" id="room-code" maxlength="5" placeholder="CODE" style="text-transform:uppercase">
+        <button id="btn-join" class="alt">Join</button>
+      </div>
+      <div class="mut" style="text-align:center; margin-top: 8px;">or</div>
+      <button id="btn-solo" style="background: #4CAF50;">Play Solo</button>
+    </section>
+
+    <!-- Room Waiting UI -->
+    <section id="room-ui" class="card hide">
+      <div class="mut">Room code — share it with friends</div>
+      <div class="code" id="display-room-code"></div>
+      <div id="players-list"></div>
+      <button id="btn-start" class="hide">Start game</button>
+      <div class="mut" id="waiting-message" style="text-align:center; padding-top: 10px;"></div>
+    </section>
+
+    <!-- Game UI -->
+    <section id="game-ui" class="hide" style="display:flex;flex-direction:column;gap:10px">
+      <div id="stage">
+        <div id="pause" class="hide">⏸</div>
+        <div class="pill" id="rankPill">🏅 1/1</div>
+        <div class="pill" id="scorePill">⭐ 0</div>
+        <div class="pill" id="coinPill">🪙 0</div>
+        <div class="pill" id="topRun">
+          <span class="mut" style="font-size:9px;color:#ffd60a">TOP RUN</span>
+          <div style="display:flex;align-items:center;gap:5px">
+            <div class="av" id="topAv">?</div>
+            <b id="topSc">0</b>
+          </div>
+        </div>
+        <div id="boostWrap">
+          ⚡
+          <div id="boostBar"><div id="boostFill"></div></div>
+        </div>
+        <div id="banner"></div>
+      </div>
+      
+      <!-- Leaderboard underneath stage -->
+      <div class="card" id="leaderboard-list"></div>
+      
+      <div class="mut" style="text-align:center">← → or swipe to switch lanes · ↑ / swipe up to jump · last survivor wins</div>
+      <button id="btn-restart" class="hide">Back to menu</button>
+    </section>
+  </main>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
