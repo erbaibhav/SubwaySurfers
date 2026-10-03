@@ -73,8 +73,8 @@ const ui = {
   displayRoomCode: document.getElementById('display-room-code'),
   playersList: document.getElementById('players-list'),
   waitingMessage: document.getElementById('waiting-message'),
-  scoreDisplay: document.getElementById('scorePill'),
-  coinDisplay: document.getElementById('coinPill'),
+  scoreDisplay: document.getElementById('scoreVal'),
+  coinDisplay: document.getElementById('coinVal'),
   livesDisplay: document.getElementById('livesPill'),
   rankDisplay: document.getElementById('rankPill'),
   countdownDisplay: document.getElementById('banner'),
@@ -82,6 +82,15 @@ const ui = {
   stage: document.getElementById('stage'),
   boostFill: document.getElementById('boostFill')
 };
+
+// Helper: update the 3-heart lives display
+function setLives(n) {
+  const hearts = ui.livesDisplay ? ui.livesDisplay.querySelectorAll('.heart') : [];
+  hearts.forEach((h, i) => {
+    h.style.opacity = i < n ? '1' : '0.22';
+    h.style.filter   = i < n ? 'none' : 'grayscale(1)';
+  });
+}
 
 // --- Socket.io Setup ---
 const socketUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '/';
@@ -733,9 +742,9 @@ function startGameCountdown() {
       state.yPos = 0;
       state.groundY = 0;
       state.magnetTimer = 0;
-      ui.scoreDisplay.innerText = '⭐ 0';
-      ui.coinDisplay.innerText = '🪙 0';
-      ui.livesDisplay.innerText = '❤️ 3';
+      ui.scoreDisplay.innerText = '0';
+      ui.coinDisplay.innerText = '0';
+      setLives(3);
       document.getElementById('game-over-ui').classList.add('hide');
     }
   }, 1000);
@@ -781,7 +790,7 @@ function checkCollisions() {
       if (state.invincible) continue;
 
       state.lives--;
-      ui.livesDisplay.innerText = '❤️ ' + state.lives;
+      setLives(state.lives);
 
       if (state.lives <= 0) {
         state.alive = false;
@@ -827,7 +836,7 @@ function checkCollisions() {
       coin.visible = false;
       state.score += 10 * (state.multiplierTimer > 0 ? 2 : 1);
       state.coinsCollected++;
-      ui.coinDisplay.innerText = '🪙 ' + state.coinsCollected;
+      ui.coinDisplay.innerText = state.coinsCollected;
     }
   }
 
@@ -847,6 +856,8 @@ function showGameOver() {
   ui.countdownDisplay.innerHTML = '';
   document.getElementById('game-over-ui').classList.remove('hide');
   document.getElementById('final-score').innerText = Math.floor(state.score);
+  const fcEl = document.getElementById('final-coins');
+  if (fcEl) fcEl.innerText = state.coinsCollected;
   ui.btnRestart.innerText = state.isSolo ? 'Retry' : 'Back to menu';
   ui.btnRestart.classList.remove('hide');
 }
@@ -858,7 +869,7 @@ function updateLeaderboard() {
   allPlayers.sort((a, b) => b.score - a.score);
   
   const rank = allPlayers.findIndex(p => p.id === state.socket.id) + 1;
-  if(ui.rankDisplay) ui.rankDisplay.innerText = `🏅 ${rank}/${allPlayers.length}`;
+  if(ui.rankDisplay) ui.rankDisplay.querySelector('#rankVal').innerText = `${rank}/${allPlayers.length}`;
 
   ui.leaderboardList.innerHTML = '';
   allPlayers.forEach(p => {
@@ -925,7 +936,7 @@ function animate(time) {
     state.distance += moveDist;
     state.score += moveDist * 0.1; 
     
-    ui.scoreDisplay.innerText = `⭐ ${Math.floor(state.score)}`;
+    ui.scoreDisplay.innerText = Math.floor(state.score);
     if(ui.boostFill) ui.boostFill.style.width = Math.min(100, (state.speed - 20) / 40 * 100) + '%';
 
     // Timers

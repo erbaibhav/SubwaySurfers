@@ -1,146 +1,315 @@
+/* ─── Google Fonts ─────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+/* ─── Design Tokens ─────────────────────────────────────────────────────────── */
 :root {
-  box-sizing: border-box;
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-  --bg: #f4f1ea;
-  --fg: #1d1b18;
-  --card: #fff;
-  --acc: #e8590c;
-  --mut: #7a746b;
-  --bd: #d8d2c4;
+  --bg:        #0d0d14;
+  --bg2:       #13131f;
+  --surface:   rgba(255,255,255,0.06);
+  --surface2:  rgba(255,255,255,0.10);
+  --border:    rgba(255,255,255,0.10);
+  --border2:   rgba(255,255,255,0.18);
+  --fg:        #f0eeff;
+  --fg2:       #a09cbf;
+  --acc1:      #7c3aed;       /* violet */
+  --acc2:      #a855f7;       /* purple */
+  --acc3:      #ec4899;       /* pink  */
+  --grad:      linear-gradient(135deg, var(--acc1), var(--acc3));
+  --grad2:     linear-gradient(135deg, #06b6d4, var(--acc1));
+  --danger:    #ef4444;
+  --gold:      #fbbf24;
+  --green:     #22c55e;
+  --radius-sm: 10px;
+  --radius:    16px;
+  --radius-lg: 22px;
+  --shadow:    0 8px 32px rgba(0,0,0,0.45);
+  --shadow-glow: 0 0 24px rgba(124,58,237,0.35);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #15130f;
-    --fg: #f1ede4;
-    --card: #211e18;
-    --acc: #ff8a3d;
-    --mut: #a39c8e;
-    --bd: #3a352b;
-  }
-}
-
-:root[data-theme="dark"] {
-  --bg: #15130f;
-  --fg: #f1ede4;
-  --card: #211e18;
-  --acc: #ff8a3d;
-  --mut: #a39c8e;
-  --bd: #3a352b;
-}
-
-* {
-  box-sizing: border-box;
-}
+/* ─── Reset & Base ──────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
-  margin: 0;
   height: 100%;
+  overflow: hidden;
 }
 
 body {
   background: var(--bg);
   color: var(--fg);
-  font: 16px/1.4 system-ui, sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
   display: flex;
   justify-content: center;
+  align-items: flex-start;
+
+  /* animated radial glow */
+  background-image:
+    radial-gradient(ellipse 60% 50% at 20% 10%, rgba(124,58,237,0.18) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 80% 90%, rgba(236,72,153,0.14) 0%, transparent 70%);
 }
 
 main {
   width: 100%;
   max-width: 440px;
-  padding: 16px;
   height: 100%;
+  padding: 16px 16px max(16px, env(safe-area-inset-bottom));
+  padding-top: max(16px, env(safe-area-inset-top));
   display: flex;
   flex-direction: column;
   gap: 12px;
+  overflow: hidden;
 }
 
+/* ─── Typography ────────────────────────────────────────────────────────────── */
 h1 {
   font-size: 22px;
-  margin: 4px 0;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-.card {
-  background: var(--card);
-  border: 1px solid var(--bd);
-  border-radius: 14px;
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-input, button {
-  font: inherit;
-  padding: 11px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--bd);
-  background: var(--bg);
-  color: var(--fg);
-}
-
-button {
-  background: var(--acc);
-  color: #fff;
-  border: 0;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.2s;
-}
-
-button:hover {
-  opacity: 0.9;
-}
-
-button.alt {
-  background: var(--bg);
-  color: var(--fg);
-  border: 1px solid var(--bd);
-}
-
-.row {
-  display: flex;
-  gap: 8px;
-}
-
-.row > * {
-  flex: 1;
-  min-width: 0;
-}
-
-.code {
-  font: 700 34px/1 ui-monospace, monospace;
-  letter-spacing: .2em;
-  text-align: center;
-  padding: 8px;
+h2 {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
 }
 
 .mut {
-  color: var(--mut);
-  font-size: 14px;
+  color: var(--fg2);
+  font-size: 13px;
+  font-weight: 500;
 }
 
-.pl {
+/* ─── Cards / Glass Panels ──────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: var(--shadow);
+  transition: box-shadow 0.3s;
+}
+
+.card:hover {
+  box-shadow: var(--shadow), var(--shadow-glow);
+}
+
+/* ─── Inputs ────────────────────────────────────────────────────────────────── */
+input {
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 13px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border2);
+  background: rgba(255,255,255,0.05);
+  color: var(--fg);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+  width: 100%;
+}
+
+input::placeholder { color: var(--fg2); }
+
+input:focus {
+  border-color: var(--acc2);
+  box-shadow: 0 0 0 3px rgba(168,85,247,0.20);
+}
+
+/* ─── Buttons ───────────────────────────────────────────────────────────────── */
+button {
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  padding: 13px 20px;
+  border-radius: var(--radius-sm);
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s, opacity 0.15s, box-shadow 0.2s;
+  position: relative;
+  overflow: hidden;
+  letter-spacing: 0.1px;
+}
+
+/* primary */
+button:not(.alt):not(.solo-btn):not(#btn-quit) {
+  background: var(--grad);
+  color: #fff;
+  box-shadow: 0 4px 18px rgba(124,58,237,0.40);
+}
+button:not(.alt):not(.solo-btn):not(#btn-quit):hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(124,58,237,0.55);
+}
+button:not(.alt):not(.solo-btn):not(#btn-quit):active {
+  transform: translateY(0);
+}
+
+/* alt / ghost */
+button.alt {
+  background: var(--surface2);
+  color: var(--fg);
+  border: 1px solid var(--border2);
+  box-shadow: none;
+}
+button.alt:hover { background: rgba(255,255,255,0.14); transform: translateY(-1px); }
+
+/* solo — green gradient */
+.solo-btn {
+  background: linear-gradient(135deg, #059669, #10b981) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 18px rgba(16,185,129,0.40) !important;
+}
+.solo-btn:hover {
+  opacity: 0.92 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 24px rgba(16,185,129,0.55) !important;
+}
+
+/* quit */
+#btn-quit {
+  background: rgba(239,68,68,0.15);
+  color: var(--danger);
+  border: 1px solid rgba(239,68,68,0.30);
+  font-size: 13px;
+  padding: 7px 14px;
+  border-radius: 8px;
+}
+#btn-quit:hover { background: rgba(239,68,68,0.25); }
+
+/* ripple shimmer on primary buttons */
+button:not(.alt):not(#btn-quit)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.15) 50%, transparent 60%);
+  transform: translateX(-100%);
+  transition: transform 0.55s;
+}
+button:not(.alt):not(#btn-quit):hover::after { transform: translateX(100%); }
+
+/* ─── Utility ───────────────────────────────────────────────────────────────── */
+.hide { display: none !important; }
+
+.row {
+  display: flex;
+  gap: 10px;
+}
+.row > * { flex: 1; min-width: 0; }
+
+/* ─── Header row ────────────────────────────────────────────────────────────── */
+.header-row {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   padding: 4px 0;
-  border-bottom: 1px solid var(--bd);
 }
 
-.hide {
-  display: none !important;
+/* ─── Lobby UI ──────────────────────────────────────────────────────────────── */
+#lobby-ui {
+  padding: 24px;
+}
+
+.lobby-brand {
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.lobby-brand .emoji { font-size: 40px; display: block; margin-bottom: 6px; }
+.lobby-brand h2 {
+  font-size: 24px;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.lobby-brand p {
+  color: var(--fg2);
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--fg2);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ─── Room code display ─────────────────────────────────────────────────────── */
+.code {
+  font-family: 'Inter', ui-monospace, monospace;
+  font-weight: 900;
+  font-size: 38px;
+  letter-spacing: 0.28em;
+  text-align: center;
+  padding: 14px 8px;
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border2);
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Players list ──────────────────────────────────────────────────────────── */
+.pl, .player-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--surface2);
+  font-size: 14px;
+  font-weight: 600;
+  gap: 8px;
+  animation: fadeSlideIn 0.25s ease;
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Game Stage ────────────────────────────────────────────────────────────── */
+#game-ui {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
 }
 
 #stage {
   position: relative;
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   background: #87CEEB;
-  /* Flex 1 to fill vertical space */
   flex: 1;
   min-height: 0;
+  /* subtle inner glow so the stage feels framed */
+  box-shadow: var(--shadow), inset 0 0 0 1px rgba(255,255,255,0.08);
 }
 
 #stage canvas {
@@ -149,104 +318,237 @@ button.alt {
   height: 100%;
 }
 
-.pill {
+/* ─── HUD top bar ───────────────────────────────────────────────────────────── */
+/*
+  Three flex children anchored inside #stage:
+    hud-left   → pause + rank
+    hud-center → lives
+    hud-right  → score + coins
+*/
+#hud-top {
   position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
   display: flex;
-  align-items: center;
-  gap: 5px;
-  background: rgba(15, 15, 25, 0.55);
-  color: #fff;
-  font: 800 13px system-ui;
-  padding: 6px 11px;
-  border-radius: 999px;
-  backdrop-filter: blur(3px);
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
   z-index: 10;
+  pointer-events: none;   /* let clicks pass through to canvas */
 }
 
-#pause {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
-  background: rgba(15, 15, 25, 0.55);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font: 700 15px system-ui;
-  cursor: pointer;
-  z-index: 10;
-}
-
-#rankPill {
-  top: 10px;
-  left: 10px;
-}
-
-#scorePill {
-  top: 10px;
-  right: 10px;
-  font: 900 18px system-ui;
-}
-
-#coinPill {
-  top: 48px;
-  right: 10px;
-  color: #ffd60a;
-}
-
-#topRun {
-  top: 84px;
-  right: 10px;
-  flex-direction: column;
-  align-items: flex-end;
-  background: transparent;
-  padding: 0;
-  gap: 1px;
-}
-
-#topRun .av {
-  width: 32px;
-  height: 32px;
-  border-radius: 9px;
-  background: linear-gradient(135deg, #f76707, #ffd60a);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font: 900 13px system-ui;
-  color: #fff;
-  border: 2px solid #fff;
-}
-
-#boostWrap {
-  position: absolute;
-  left: 10px;
-  bottom: 10px;
+.hud-group {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: rgba(15, 15, 25, 0.55);
-  padding: 6px 10px;
+  pointer-events: all;
+}
+
+.hud-left  { justify-content: flex-start; }
+.hud-center { flex: 1; justify-content: center; }
+.hud-right { flex-direction: column; align-items: flex-end; gap: 5px; }
+
+/* ─── Glass pill base ───────────────────────────────────────────────────────── */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(8,6,20,0.62);
+  color: #fff;
+  font-family: 'Inter', system-ui;
+  font-weight: 800;
+  font-size: 13px;
+  padding: 6px 11px;
   border-radius: 999px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,0.13);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.35);
+  white-space: nowrap;
+}
+
+.pill-icon { font-size: 13px; line-height: 1; }
+
+/* ─── Pause button ──────────────────────────────────────────────────────────── */
+#pause {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: rgba(8,6,20,0.62);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,0.13);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.35);
+  transition: background 0.18s, transform 0.12s;
+}
+#pause:hover  { background: rgba(30,18,60,0.82); }
+#pause:active { transform: scale(0.92); }
+
+/* ─── Rank pill ─────────────────────────────────────────────────────────────── */
+#rankPill { font-size: 12px; }
+
+/* ─── Score pill — hero stat ────────────────────────────────────────────────── */
+#scorePill {
+  font-size: 16px;
+  font-weight: 900;
+  padding: 7px 13px;
+  background: rgba(8,6,20,0.72);
+  border-color: rgba(168,85,247,0.28);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.4), 0 0 14px rgba(168,85,247,0.22);
+}
+
+#scorePill .pill-icon { font-size: 14px; }
+
+/* ─── Coin pill ─────────────────────────────────────────────────────────────── */
+#coinPill { color: var(--gold); font-size: 13px; }
+
+/* ─── Lives display ─────────────────────────────────────────────────────────── */
+#livesPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(8,6,20,0.62);
+  padding: 6px 12px;
+  border-radius: 999px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,0.13);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.35);
+}
+
+.heart {
+  font-size: 16px;
+  line-height: 1;
+  transition: opacity 0.3s, filter 0.3s, transform 0.25s;
+  display: inline-block;
+}
+
+/* pop animation when a life is lost */
+@keyframes heartLost {
+  0%   { transform: scale(1.4); }
+  60%  { transform: scale(0.8); }
+  100% { transform: scale(1); }
+}
+.heart.lost { animation: heartLost 0.35s ease; }
+
+/* ─── Top-runner widget ─────────────────────────────────────────────────────── */
+#topRun {
+  position: absolute;
+  top: 60px;       /* just below the HUD bar */
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
   z-index: 10;
 }
 
+.top-label {
+  font-family: 'Inter', system-ui;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  color: var(--gold);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+}
+
+.top-body {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(8,6,20,0.62);
+  padding: 5px 8px 5px 6px;
+  border-radius: 12px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,0.13);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.35);
+  color: #fff;
+  font-family: 'Inter', system-ui;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.av {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: var(--grad);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 900 11px 'Inter', system-ui;
+  color: #fff;
+  border: 1.5px solid rgba(255,255,255,0.28);
+  flex-shrink: 0;
+}
+
+/* ─── Boost bar ─────────────────────────────────────────────────────────────── */
+#boostWrap {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: rgba(8,6,20,0.62);
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.13);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  z-index: 10;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.35);
+}
+
+#boostIcon {
+  font-size: 15px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 4px rgba(6,182,212,0.8));
+}
+
+#boostTrack {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+#boostLabel {
+  font-family: 'Inter', system-ui;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  color: rgba(255,255,255,0.45);
+  text-transform: uppercase;
+}
+
 #boostBar {
-  width: 70px;
-  height: 8px;
-  background: rgba(255, 255, 255, 0.25);
-  border-radius: 6px;
+  width: 100%;
+  height: 5px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 999px;
   overflow: hidden;
 }
 
 #boostFill {
   height: 100%;
   width: 0%;
-  background: linear-gradient(90deg, #4cc9f0, #f76707);
+  background: linear-gradient(90deg, #06b6d4, #a855f7, #ec4899);
+  border-radius: 999px;
+  transition: width 0.15s ease-out;
+  box-shadow: 0 0 8px rgba(168,85,247,0.70);
 }
 
+/* ─── Banner / Countdown ────────────────────────────────────────────────────── */
 #banner {
   position: absolute;
   inset: 0;
@@ -256,13 +558,128 @@ button.alt {
   flex-direction: column;
   gap: 6px;
   color: #fff;
-  font: 900 15px system-ui;
-  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+  font-family: 'Inter', system-ui;
+  font-weight: 900;
+  font-size: 15px;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.9);
   pointer-events: none;
   text-align: center;
   z-index: 20;
+  /* dark vignette so countdown pops */
+  background: radial-gradient(ellipse 70% 60% at 50% 50%, rgba(0,0,0,0.30) 0%, transparent 80%);
 }
 
 #banner b {
-  font-size: 5rem;
+  font-size: 6rem;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 28px rgba(168,85,247,0.75));
+  animation: popIn 0.28s cubic-bezier(0.34,1.56,0.64,1);
 }
+
+@keyframes popIn {
+  from { transform: scale(0.55); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+
+/* ─── Leaderboard ───────────────────────────────────────────────────────────── */
+#leaderboard-list {
+  padding: 10px 14px;
+  gap: 5px;
+}
+
+#leaderboard-list:empty { display: none; }
+
+/* ─── Game Over Card ────────────────────────────────────────────────────────── */
+#game-over-ui {
+  text-align: center;
+  padding: 28px 24px 24px;
+  gap: 10px;
+  animation: fadeSlideIn 0.35s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+.gameover-emoji { font-size: 40px; line-height: 1; }
+
+#game-over-ui h2 {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+}
+
+/* two-stat row */
+.gameover-stats {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  background: var(--surface2);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.go-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 14px 8px;
+}
+
+.go-stat-divider {
+  width: 1px;
+  background: var(--border);
+  align-self: stretch;
+  flex-shrink: 0;
+}
+
+.go-stat-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg2);
+}
+
+.go-stat-value {
+  font-size: 36px;
+  font-weight: 900;
+  letter-spacing: -1px;
+  line-height: 1;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.go-coins {
+  background: linear-gradient(135deg, #f59e0b, #fbbf24) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+}
+
+/* ─── Controls hint ─────────────────────────────────────────────────────────── */
+.controls-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--fg2);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 1px 0;
+}
+
+.hint-dot {
+  color: var(--border2);
+  font-size: 10px;
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
