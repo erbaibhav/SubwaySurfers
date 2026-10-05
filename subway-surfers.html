@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Last Runner Standing — GameHub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
+  <link rel="stylesheet" href="/src/style.css">
+  <link rel="stylesheet" href="/src/hub.css">
+</head>
+<body>
+  <main>
+
+    <!-- ── Top Header ─────────────────────────────────────────────────────── -->
+    <div class="header-row">
+      <a href="/" class="hub-back-btn" title="Back to Game Hub">🏠</a>
+      <h1>🏃 Last Runner Standing</h1>
+      <button id="btn-quit" class="hide" aria-label="Quit game">✕ Quit</button>
+    </div>
+
+    <!-- ── Difficulty + Mode bar (shown before game starts) ──────────────── -->
+    <div id="pre-game-bar" class="pre-game-bar">
+      <div class="pgb-section">
+        <span class="pgb-label">Mode</span>
+        <div class="pgb-pills" id="mode-pills">
+          <button class="pgb-pill active" data-mode="solo">⚡ Solo</button>
+          <button class="pgb-pill" data-mode="multi">👥 Multi</button>
+        </div>
+      </div>
+      <div class="pgb-section">
+        <span class="pgb-label">Difficulty</span>
+        <div class="pgb-pills" id="diff-pills">
+          <button class="pgb-pill active" data-diff="easy">🟢 Easy</button>
+          <button class="pgb-pill" data-diff="medium">🟡 Medium</button>
+          <button class="pgb-pill" data-diff="hard">🔴 Hard</button>
+          <button class="pgb-pill" data-diff="expert">💀 Expert</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Lobby UI ───────────────────────────────────────────────────────── -->
+    <section id="lobby-ui" class="card" aria-label="Game lobby">
+
+      <div class="lobby-brand">
+        <span class="emoji">🏃‍♂️</span>
+        <h2>Ready to run?</h2>
+        <p>Create a room, join a friend, or go solo</p>
+      </div>
+
+      <input
+        type="text"
+        id="player-name"
+        maxlength="14"
+        placeholder="Your name"
+        autocomplete="off"
+        spellcheck="false"
+        aria-label="Player name"
+      >
+
+      <button id="btn-create">🚀 Create Room</button>
+
+      <div class="divider">or join a friend</div>
+
+      <div class="row">
+        <input
+          type="text"
+          id="room-code"
+          maxlength="5"
+          placeholder="ROOM CODE"
+          style="text-transform:uppercase; letter-spacing:0.15em; font-weight:700;"
+          autocomplete="off"
+          spellcheck="false"
+          aria-label="Room code"
+        >
+        <button id="btn-join" class="alt">Join →</button>
+      </div>
+
+      <div class="divider">or</div>
+
+      <button id="btn-solo" class="solo-btn">⚡ Play Solo</button>
+
+    </section>
+
+    <!-- ── Room Waiting UI ────────────────────────────────────────────────── -->
+    <section id="room-ui" class="card hide" aria-label="Waiting room">
+
+      <div class="mut" style="text-align:center; font-weight:600;">
+        Share this code with friends
+      </div>
+
+      <div class="code" id="display-room-code" aria-label="Room code"></div>
+
+      <div id="players-list" role="list" aria-label="Players in room"></div>
+
+      <button id="btn-start" class="hide">▶ Start Game</button>
+
+      <div class="mut" id="waiting-message" style="text-align:center;"></div>
+
+    </section>
+
+    <!-- ── Game UI ────────────────────────────────────────────────────────── -->
+    <section id="game-ui" class="hide" aria-label="Game">
+
+      <!-- 3-D canvas stage -->
+      <div id="stage">
+
+        <!-- ── HUD: Top bar ──────────────────────────────────────────────── -->
+        <div id="hud-top">
+          <!-- Left: pause + rank -->
+          <div class="hud-group hud-left">
+            <div id="pause" role="button" aria-label="Pause" tabindex="0">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+                <rect x="1" y="1" width="4" height="12" rx="1.5"/>
+                <rect x="9" y="1" width="4" height="12" rx="1.5"/>
+              </svg>
+            </div>
+            <div class="pill" id="rankPill" aria-label="Rank">
+              <span class="pill-icon">🏅</span><span id="rankVal">1/1</span>
+            </div>
+          </div>
+
+          <!-- Center: lives -->
+          <div class="hud-group hud-center">
+            <div id="livesPill" aria-label="Lives">
+              <span class="heart" data-i="1">❤️</span>
+              <span class="heart" data-i="2">❤️</span>
+              <span class="heart" data-i="3">❤️</span>
+            </div>
+          </div>
+
+          <!-- Right: score + coins -->
+          <div class="hud-group hud-right">
+            <div class="pill" id="scorePill" aria-label="Score">
+              <span class="pill-icon">⭐</span><span id="scoreVal">0</span>
+            </div>
+            <div class="pill" id="coinPill" aria-label="Coins">
+              <span class="pill-icon">🪙</span><span id="coinVal">0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── HUD: Top-runner (right side, below score) ─────────────────── -->
+        <div id="topRun" aria-label="Top runner">
+          <span class="top-label">TOP</span>
+          <div class="top-body">
+            <div class="av" id="topAv">?</div>
+            <b id="topSc">0</b>
+          </div>
+        </div>
+
+        <!-- ── HUD: Bottom boost bar ──────────────────────────────────────── -->
+        <div id="boostWrap" aria-label="Boost meter">
+          <span id="boostIcon">⚡</span>
+          <div id="boostTrack">
+            <div id="boostBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <div id="boostFill"></div>
+            </div>
+            <span id="boostLabel">BOOST</span>
+          </div>
+        </div>
+
+        <!-- ── Countdown / event banner ───────────────────────────────────── -->
+        <div id="banner" aria-live="assertive"></div>
+
+      </div><!-- /#stage -->
+
+      <!-- Leaderboard (multiplayer only) -->
+      <div class="card" id="leaderboard-list" role="list" aria-label="Leaderboard"></div>
+
+      <!-- Game Over card -->
+      <div id="game-over-ui" class="card hide" role="region" aria-label="Game over">
+        <div class="gameover-emoji">💀</div>
+        <h2>Game Over</h2>
+        <div class="gameover-stats">
+          <div class="go-stat">
+            <span class="go-stat-label">Score</span>
+            <span class="go-stat-value" id="final-score">0</span>
+          </div>
+          <div class="go-stat-divider"></div>
+          <div class="go-stat">
+            <span class="go-stat-label">Coins</span>
+            <span class="go-stat-value go-coins" id="final-coins">0</span>
+          </div>
+          <div class="go-stat-divider"></div>
+          <div class="go-stat">
+            <span class="go-stat-label">Level</span>
+            <span class="go-stat-value" id="final-level" style="background:linear-gradient(135deg,#06b6d4,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">1</span>
+          </div>
+        </div>
+        <div id="score-rank-badge" class="score-rank-badge hide"></div>
+      </div>
+
+      <!-- Controls hint -->
+      <div class="controls-hint">
+        <span>⬅ ➡ lanes</span>
+        <span class="hint-dot">·</span>
+        <span>⬆ jump</span>
+        <span class="hint-dot">·</span>
+        <span>⬇ slide</span>
+      </div>
+
+      <button id="btn-restart" class="hide">↩ Back to Menu</button>
+
+    </section>
+
+  </main>
+
+  <script type="module" src="/src/main.js"></script>
+
+  <!-- ── Hub bootstrap: read URL params + sync pre-game bar ─────────────── -->
+  <script>
+  (function() {
+    const p    = new URLSearchParams(location.search);
+    const mode = p.get('mode') || 'solo';
+    const diff = p.get('diff') || 'easy';
+
+    // Pre-select the mode pill
+    document.querySelectorAll('#mode-pills .pgb-pill').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.mode === mode);
+    });
+    // Pre-select the difficulty pill
+    document.querySelectorAll('#diff-pills .pgb-pill').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.diff === diff);
+    });
+
+    // If arriving from hub in solo mode → click Solo immediately after main.js loads
+    if (mode === 'solo') {
+      window.__autoSolo = true;
+      window.__autoDiff = diff;
+    }
+
+    // Difficulty pill interaction
+    document.querySelectorAll('#diff-pills .pgb-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#diff-pills .pgb-pill').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        window.__autoDiff = btn.dataset.diff;
+      });
+    });
+    document.querySelectorAll('#mode-pills .pgb-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#mode-pills .pgb-pill').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+
+    // Pre-fill name from URL
+    const name = p.get('name');
+    if (name) {
+      const el = document.getElementById('player-name');
+      if (el) el.value = decodeURIComponent(name);
+    }
+
+    // Pre-fill room code from URL for auto-join
+    const roomId = p.get('roomId');
+    if (roomId && mode === 'multi') {
+      window.__autoRoomId   = roomId;
+      window.__autoRoomSeed = parseFloat(p.get('seed') || '0');
+    }
+  })();
+  </script>
+</body>
+</html>

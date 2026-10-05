@@ -2,6 +2,49 @@ import * as THREE from 'three';
 import { io } from 'socket.io-client';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 
+// ── Difficulty config ─────────────────────────────────────────────────────────
+const DIFF_CFG = {
+  easy:   { label:'🟢 Easy',   startSpeed:18, speedMult:0.2,  obstacleDensity:0.7, label_short:'Easy'   },
+  medium: { label:'🟡 Medium', startSpeed:22, speedMult:0.35, obstacleDensity:1.0, label_short:'Medium' },
+  hard:   { label:'🔴 Hard',   startSpeed:26, speedMult:0.55, obstacleDensity:1.3, label_short:'Hard'   },
+  expert: { label:'💀 Expert', startSpeed:30, speedMult:0.80, obstacleDensity:1.6, label_short:'Expert' },
+};
+
+// Read URL params (set by hub bootstrap script)
+const _urlParams  = new URLSearchParams(location.search);
+const _urlMode    = _urlParams.get('mode') || 'solo';
+const _urlDiff    = _urlParams.get('diff') || 'easy';
+const _urlRoomId  = _urlParams.get('roomId') || null;
+const _urlSeed    = parseFloat(_urlParams.get('seed') || '0');
+const _urlName    = _urlParams.get('name') ? decodeURIComponent(_urlParams.get('name')) : '';
+
+const activeDiff  = DIFF_CFG[_urlDiff] || DIFF_CFG.easy;
+
+// ── Score Saving ──────────────────────────────────────────────────────────────
+function saveRunnerScore(score, coins, diff, playerName) {
+  try {
+    const SCORES_KEY = 'gamehub_scores';
+    const PLAYED_KEY = 'gamehub_games_played';
+    const scores = JSON.parse(localStorage.getItem(SCORES_KEY)) || [];
+    scores.push({ game:'runner', name: playerName || 'Runner', score: Math.floor(score), coins, diff, date: Date.now() });
+    scores.sort((a,b) => b.score - a.score);
+    localStorage.setItem(SCORES_KEY, JSON.stringify(scores.slice(0, 50)));
+    const played = parseInt(localStorage.getItem(PLAYED_KEY) || '0') + 1;
+    localStorage.setItem(PLAYED_KEY, played);
+  } catch(e) {}
+}
+
+// Add a difficulty HUD badge to the game stage
+function injectDiffBadge() {
+  const stage = document.getElementById('stage');
+  if (!stage || document.getElementById('diff-hud-badge')) return;
+  const badge = document.createElement('div');
+  badge.id = 'diff-hud-badge';
+  badge.className = 'diff-hud-pill';
+  badge.textContent = activeDiff.label;
+  stage.appendChild(badge);
+}
+
 let mixer;
 let runAction;
 let jumpAction;
@@ -38,7 +81,7 @@ const state = {
   blinkInterval: null,
   seed: 0,
   rng: null,
-  speed: 20,
+  speed: activeDiff.startSpeed,
   distance: 0,
   lane: 0, // -1 (left), 0 (middle), 1 (right)
   isJumping: false,
@@ -128,8 +171,14 @@ state.socket.on('roomUpdate', (data) => {
 });
 
 state.socket.on('gameStart', (data) => {
-  state.seed = data.seed;
-  state.rng = new SeededRandom(Math.floor(state.seed * 1000000));
+  state.seed  = data.seed;
+  state.rng   = new SeededRandom(Math.floor(state.seed * 1000000));
+  // Apply difficulty from server (set when room was created)
+  if (data.diff) {
+    window.__activeDiffKey = data.diff;
+    const dc = DIFF_CFG[data.diff] || DIFF_CFG.easy;
+    state.speed = dc.startSpeed;
+  }
   startGameCountdown();
 });
 
@@ -143,8 +192,10 @@ state.socket.on('playerUpdated', (data) => {
 // UI Event Listeners
 ui.btnCreate.addEventListener('click', () => {
   const name = ui.playerNameInput.value || 'Player' + Math.floor(Math.random() * 1000);
+  const diff = document.querySelector('#diff-pills .pgb-pill.active')?.dataset.diff || _urlDiff || 'easy';
   state.playerName = name;
-  state.socket.emit('createRoom', { name });
+  window.__activeDiffKey = diff;
+  state.socket.emit('createRoom', { name, game: 'runner', diff });
 });
 
 ui.btnJoin.addEventListener('click', () => {
@@ -152,18 +203,22 @@ ui.btnJoin.addEventListener('click', () => {
   const code = ui.roomCodeInput.value.toUpperCase();
   if (code) {
     state.playerName = name;
-    state.socket.emit('joinRoom', { roomId: code, name });
+    state.socket.emit('joinRoom', { roomId: code, name, game: 'runner' });
   }
 });
 
 ui.btnSolo.addEventListener('click', () => {
-  state.isSolo = true;
-  state.seed = Math.random();
-  state.rng = new SeededRandom(Math.floor(state.seed * 1000000));
+  const diffKey = document.querySelector('#diff-pills .pgb-pill.active')?.dataset.diff || _urlDiff || 'easy';
+  const diff    = DIFF_CFG[diffKey] || DIFF_CFG.easy;
+  state.isSolo  = true;
+  state.seed    = Math.random();
+  state.rng     = new SeededRandom(Math.floor(state.seed * 1000000));
+  state.speed   = diff.startSpeed;
+  window.__activeDiffKey = diffKey;
   startGameCountdown();
 });
 
-ui.btnQuit.addEventListener('click', () => { window.location.reload(); });
+ui.btnQuit.addEventListener('click', () => { window.location.href = '/'; });
 
 ui.btnStart.addEventListener('click', () => { state.socket.emit('startGame'); });
 ui.btnRestart.addEventListener('click', () => { 
@@ -179,9 +234,13 @@ ui.btnRestart.addEventListener('click', () => {
     nextBuildingZRight = spawnBuildingIfNeeded(-1, nextBuildingZRight);
     chunksSpawned = 3;
     playerRig.position.set(0, 0, 0);
+    // Apply currently-selected difficulty
+    const diffKey = document.querySelector('#diff-pills .pgb-pill.active')?.dataset.diff || window.__activeDiffKey || _urlDiff || 'easy';
+    window.__activeDiffKey = diffKey;
+    state.speed = (DIFF_CFG[diffKey] || DIFF_CFG.easy).startSpeed;
     startGameCountdown();
   } else {
-    window.location.reload(); 
+    window.location.href = '/'; 
   }
 });
 
@@ -491,7 +550,10 @@ function createSteamTrain() {
 function spawnObstacleChunk(zPos) {
   if (!state.rng) return;
   const lanes = [-1, 0, 1];
-  const rand = state.rng.next();
+  const rawRand = state.rng.next();
+  // Apply difficulty density: on easy, fewer obstacles; on expert, more
+  const density = (DIFF_CFG[window.__activeDiffKey || _urlDiff] || activeDiff).obstacleDensity;
+  const rand    = rawRand / density; // lower rand → pushes toward coin/empty patterns
   
   // Track occupied lanes to prevent coins from spawning inside trains or barriers
   let occupiedLanes = [];
@@ -711,6 +773,10 @@ function startGameCountdown() {
   ui.game.classList.remove('hide');
   ui.btnQuit.classList.remove('hide');
   state.gameState = 'countdown';
+
+  // Hide the pre-game diff/mode bar once playing
+  const pgb = document.getElementById('pre-game-bar');
+  if (pgb) pgb.classList.add('hide');
   
   if (ui.stage.clientWidth && ui.stage.clientHeight) {
     camera.aspect = ui.stage.clientWidth / ui.stage.clientHeight;
@@ -738,7 +804,8 @@ function startGameCountdown() {
       state.score = 0;
       state.coinsCollected = 0;
       state.distance = 0;
-      state.speed = 20;
+      const activeDiffKey = window.__activeDiffKey || _urlDiff || 'easy';
+      state.speed = (DIFF_CFG[activeDiffKey] || DIFF_CFG.easy).startSpeed;
       state.yPos = 0;
       state.groundY = 0;
       state.magnetTimer = 0;
@@ -746,6 +813,7 @@ function startGameCountdown() {
       ui.coinDisplay.innerText = '0';
       setLives(3);
       document.getElementById('game-over-ui').classList.add('hide');
+      injectDiffBadge();
     }
   }, 1000);
 }
@@ -858,8 +926,37 @@ function showGameOver() {
   document.getElementById('final-score').innerText = Math.floor(state.score);
   const fcEl = document.getElementById('final-coins');
   if (fcEl) fcEl.innerText = state.coinsCollected;
-  ui.btnRestart.innerText = state.isSolo ? 'Retry' : 'Back to menu';
+
+  // Level badge: approx level from distance
+  const levelEl = document.getElementById('final-level');
+  if (levelEl) levelEl.innerText = Math.max(1, Math.floor(state.distance / 500) + 1);
+
+  // Score rank badge
+  const diffKey = window.__activeDiffKey || _urlDiff || 'easy';
+  const badge   = document.getElementById('score-rank-badge');
+  if (badge) {
+    const rank = getRank(Math.floor(state.score), diffKey);
+    badge.textContent = rank;
+    badge.classList.remove('hide');
+  }
+
+  ui.btnRestart.innerText = state.isSolo ? '↺ Retry' : '↩ Back to menu';
   ui.btnRestart.classList.remove('hide');
+
+  // Save score to hub
+  saveRunnerScore(state.score, state.coinsCollected, diffKey, state.playerName);
+}
+
+function getRank(score, diff) {
+  const thresholds = {
+    easy:   [[5000,'🏆 Legend'],[3000,'🥇 Master'],[1500,'🥈 Pro'],[500,'🥉 Amateur'],[ 0,'🎮 Rookie']],
+    medium: [[6000,'🏆 Legend'],[3500,'🥇 Master'],[2000,'🥈 Pro'],[700,'🥉 Amateur'], [0,'🎮 Rookie']],
+    hard:   [[8000,'🏆 Legend'],[5000,'🥇 Master'],[2500,'🥈 Pro'],[900,'🥉 Amateur'], [0,'🎮 Rookie']],
+    expert: [[10000,'🏆 Legend'],[7000,'🥇 Master'],[4000,'🥈 Pro'],[1200,'🥉 Amateur'],[0,'🎮 Rookie']],
+  };
+  const t = thresholds[diff] || thresholds.easy;
+  for (const [min, label] of t) { if (score >= min) return label; }
+  return '🎮 Rookie';
 }
 
 function updateLeaderboard() {
@@ -931,7 +1028,7 @@ function animate(time) {
   }
 
   if (state.gameState === 'playing' && state.alive) {
-    state.speed += delta * 0.3; // Gradual difficulty
+    state.speed += delta * ((DIFF_CFG[window.__activeDiffKey || _urlDiff] || activeDiff).speedMult); // difficulty-scaled ramp
     const moveDist = state.speed * delta;
     state.distance += moveDist;
     state.score += moveDist * 0.1; 
@@ -1022,3 +1119,28 @@ window.addEventListener('resize', () => {
 });
 
 animate();
+
+// ── Auto-launch from hub ───────────────────────────────────────────────────────
+// The bootstrap script sets window.__autoSolo / window.__autoRoomId
+// We wait one tick so Three.js is sized before starting
+requestAnimationFrame(() => {
+  // Pre-fill name from URL
+  if (_urlName && ui.playerNameInput) ui.playerNameInput.value = _urlName;
+
+  if (_urlMode === 'solo' || window.__autoSolo) {
+    window.__activeDiffKey = _urlDiff;
+    state.isSolo  = true;
+    state.seed    = Math.random();
+    state.rng     = new SeededRandom(Math.floor(state.seed * 1000000));
+    state.speed   = (DIFF_CFG[_urlDiff] || DIFF_CFG.easy).startSpeed;
+    // Hide the pre-game bar when auto-starting
+    const pgb = document.getElementById('pre-game-bar');
+    if (pgb) pgb.style.display = 'none';
+    startGameCountdown();
+  } else if (_urlMode === 'multi' && _urlRoomId) {
+    window.__activeDiffKey = _urlDiff;
+    // Pre-fill room code so player can rejoin or be auto-joined
+    if (ui.roomCodeInput) ui.roomCodeInput.value = _urlRoomId;
+    state.socket.emit('rejoinRoom', { roomId: _urlRoomId, name: _urlName || 'Player', game: 'runner' });
+  }
+});

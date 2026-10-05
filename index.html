@@ -3,182 +3,977 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Last Runner Standing</title>
+  <title>🎮 GameHub</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
-  <link rel="stylesheet" href="/src/style.css">
+  <style>
+    /* ── Design Tokens ─────────────────────────────────────────────────── */
+    :root {
+      --bg:        #0d0d14;
+      --bg2:       #13131f;
+      --surface:   rgba(255,255,255,0.06);
+      --surface2:  rgba(255,255,255,0.10);
+      --border:    rgba(255,255,255,0.10);
+      --border2:   rgba(255,255,255,0.18);
+      --fg:        #f0eeff;
+      --fg2:       #a09cbf;
+      --acc1:      #7c3aed;
+      --acc2:      #a855f7;
+      --acc3:      #ec4899;
+      --grad:      linear-gradient(135deg, var(--acc1), var(--acc3));
+      --grad2:     linear-gradient(135deg, #06b6d4, var(--acc1));
+      --green:     #22c55e;
+      --gold:      #fbbf24;
+      --danger:    #ef4444;
+      --radius:    16px;
+      --radius-lg: 22px;
+      --shadow:    0 8px 32px rgba(0,0,0,0.45);
+      --shadow-glow: 0 0 28px rgba(124,58,237,0.30);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 15px;
+      line-height: 1.5;
+      min-height: 100%;
+      overflow-x: hidden;
+      background-image:
+        radial-gradient(ellipse 70% 55% at 15% 5%,  rgba(124,58,237,0.20) 0%, transparent 65%),
+        radial-gradient(ellipse 55% 45% at 85% 95%, rgba(236,72,153,0.16) 0%, transparent 65%),
+        radial-gradient(ellipse 40% 35% at 80% 20%, rgba(6,182,212,0.10)  0%, transparent 60%);
+    }
+
+    /* ── Layout ─────────────────────────────────────────────────────────── */
+    .hub-wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px 20px 48px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    /* ── Hero header ────────────────────────────────────────────────────── */
+    .hub-hero {
+      text-align: center;
+      padding: 20px 0 4px;
+    }
+    .hub-hero-logo {
+      font-size: 48px;
+      line-height: 1;
+      margin-bottom: 10px;
+      filter: drop-shadow(0 0 24px rgba(168,85,247,0.5));
+      animation: floatLogo 3s ease-in-out infinite;
+    }
+    @keyframes floatLogo {
+      0%, 100% { transform: translateY(0);   }
+      50%       { transform: translateY(-6px); }
+    }
+    .hub-hero h1 {
+      font-size: clamp(28px, 6vw, 40px);
+      font-weight: 900;
+      letter-spacing: -1px;
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hub-hero p {
+      margin-top: 8px;
+      color: var(--fg2);
+      font-size: 14px;
+    }
+
+    /* ── Section title ──────────────────────────────────────────────────── */
+    .section-title {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--fg2);
+      margin-bottom: -6px;
+    }
+
+    /* ── Game grid ──────────────────────────────────────────────────────── */
+    .game-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 18px;
+    }
+
+    /* ── Game card ──────────────────────────────────────────────────────── */
+    .game-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow);
+      transition: transform 0.22s, box-shadow 0.22s, border-color 0.22s;
+      position: relative;
+    }
+    .game-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow), var(--shadow-glow);
+      border-color: var(--border2);
+    }
+
+    /* gradient top strip */
+    .game-card-banner {
+      height: 130px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 64px;
+      position: relative;
+      overflow: hidden;
+    }
+    .game-card-banner::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+    }
+    .game-card--runner .game-card-banner {
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    }
+    .game-card--runner .game-card-banner::before {
+      background: radial-gradient(ellipse 80% 80% at 50% 120%, rgba(6,182,212,0.4) 0%, transparent 70%);
+    }
+    .game-card--drink .game-card-banner {
+      background: linear-gradient(135deg, #1a0533, #2d1457, #1a0533);
+    }
+    .game-card--drink .game-card-banner::before {
+      background: radial-gradient(ellipse 80% 80% at 50% 120%, rgba(168,85,247,0.5) 0%, transparent 70%);
+    }
+
+    .game-card-emoji {
+      font-size: 58px;
+      filter: drop-shadow(0 4px 20px rgba(0,0,0,0.6));
+      position: relative;
+      z-index: 1;
+      animation: floatLogo 3s ease-in-out infinite;
+    }
+    .game-card--drink .game-card-emoji { animation-delay: -1.5s; }
+
+    .new-badge {
+      position: absolute;
+      top: 12px; right: 12px;
+      font-size: 10px; font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #f59e0b, #fbbf24);
+      color: #000;
+      z-index: 2;
+    }
+
+    .game-card-body {
+      padding: 18px 18px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1;
+    }
+
+    .game-card-title {
+      font-size: 19px;
+      font-weight: 900;
+      letter-spacing: -0.4px;
+    }
+
+    .game-card-desc {
+      font-size: 13px;
+      color: var(--fg2);
+      line-height: 1.55;
+    }
+
+    .game-card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 2px;
+    }
+    .tag {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--fg2);
+    }
+
+    /* ── Play buttons ───────────────────────────────────────────────────── */
+    .game-card-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: auto;
+    }
+
+    .btn-play-solo, .btn-play-multi {
+      flex: 1;
+      font-family: 'Inter', system-ui;
+      font-size: 13px;
+      font-weight: 800;
+      padding: 10px 8px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: transform 0.15s, opacity 0.15s, box-shadow 0.18s;
+      letter-spacing: 0.02em;
+    }
+    .btn-play-solo {
+      background: linear-gradient(135deg, #059669, #10b981);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(16,185,129,0.35);
+    }
+    .btn-play-solo:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 22px rgba(16,185,129,0.5);
+    }
+    .btn-play-multi {
+      background: var(--grad);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(124,58,237,0.35);
+    }
+    .btn-play-multi:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 22px rgba(124,58,237,0.5);
+    }
+    .btn-play-solo:active, .btn-play-multi:active { transform: translateY(0); opacity: 0.9; }
+
+    /* ── Difficulty selector ─────────────────────────────────────────────── */
+    .diff-row {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+    .diff-btn {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border2);
+      background: transparent;
+      color: var(--fg2);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.12s;
+      font-family: 'Inter', system-ui;
+    }
+    .diff-btn:hover { background: rgba(255,255,255,0.09); color: var(--fg); transform: translateY(-1px); }
+    .diff-btn.selected {
+      background: var(--grad);
+      border-color: transparent;
+      color: #fff;
+      box-shadow: 0 2px 10px rgba(124,58,237,0.38);
+    }
+    .diff-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--fg2);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 4px;
+    }
+
+    /* ── Leaderboard strip ──────────────────────────────────────────────── */
+    .leaderboard-strip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      backdrop-filter: blur(16px);
+    }
+    .lb-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .lb-title {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+    }
+    .lb-tabs {
+      display: flex;
+      gap: 6px;
+    }
+    .lb-tab {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 11px;
+      border-radius: 999px;
+      border: 1px solid var(--border2);
+      background: transparent;
+      color: var(--fg2);
+      cursor: pointer;
+      transition: 0.15s;
+      font-family: 'Inter', system-ui;
+    }
+    .lb-tab.active {
+      background: var(--grad);
+      border-color: transparent;
+      color: #fff;
+    }
+    .lb-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-height: 120px;
+    }
+    .lb-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 12px;
+      background: var(--surface2);
+      font-size: 13px;
+      font-weight: 600;
+      animation: fadeSlideIn 0.22s ease;
+    }
+    @keyframes fadeSlideIn {
+      from { opacity:0; transform:translateY(5px); }
+      to   { opacity:1; transform:translateY(0);   }
+    }
+    .lb-rank {
+      font-size: 15px;
+      width: 26px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .lb-name { flex: 1; }
+    .lb-score {
+      font-weight: 800;
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .lb-game-tag {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--fg2);
+    }
+    .lb-empty {
+      text-align: center;
+      color: var(--fg2);
+      font-size: 13px;
+      padding: 24px 0;
+    }
+
+    /* ── Info strip ─────────────────────────────────────────────────────── */
+    .info-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .info-card {
+      flex: 1;
+      min-width: 130px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: center;
+      text-align: center;
+    }
+    .info-icon { font-size: 24px; }
+    .info-val  { font-size: 22px; font-weight: 900; }
+    .info-lbl  { font-size: 11px; color: var(--fg2); font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
+
+    /* ── Modal ──────────────────────────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.72);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.22s;
+    }
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .modal {
+      background: #161624;
+      border: 1px solid var(--border2);
+      border-radius: var(--radius-lg);
+      padding: 28px 24px;
+      width: 100%;
+      max-width: 380px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+      transform: scale(0.92);
+      transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .modal-overlay.open .modal { transform: scale(1); }
+
+    .modal-title {
+      font-size: 19px;
+      font-weight: 900;
+      letter-spacing: -0.4px;
+      text-align: center;
+    }
+    .modal-emoji {
+      font-size: 38px;
+      text-align: center;
+    }
+    .modal input {
+      font-family: 'Inter', system-ui;
+      font-size: 15px;
+      font-weight: 500;
+      padding: 13px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border2);
+      background: rgba(255,255,255,0.05);
+      color: var(--fg);
+      outline: none;
+      width: 100%;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .modal input::placeholder { color: var(--fg2); }
+    .modal input:focus {
+      border-color: var(--acc2);
+      box-shadow: 0 0 0 3px rgba(168,85,247,0.20);
+    }
+    .modal-row {
+      display: flex;
+      gap: 10px;
+    }
+    .modal-row > * { flex: 1; }
+
+    .btn-modal {
+      font-family: 'Inter', system-ui;
+      font-size: 14px;
+      font-weight: 800;
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.15s, opacity 0.15s;
+    }
+    .btn-modal-primary {
+      background: var(--grad);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(124,58,237,0.4);
+    }
+    .btn-modal-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-modal-cancel {
+      background: var(--surface2);
+      color: var(--fg2);
+      border: 1px solid var(--border2);
+    }
+    .btn-modal-cancel:hover { background: rgba(255,255,255,0.12); }
+
+    .modal-divider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--fg2);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .modal-divider::before, .modal-divider::after {
+      content: ''; flex: 1; height: 1px;
+      background: var(--border);
+    }
+
+    .room-code-display {
+      font-family: 'Inter', ui-monospace, monospace;
+      font-weight: 900;
+      font-size: 34px;
+      letter-spacing: 0.28em;
+      text-align: center;
+      padding: 14px;
+      background: var(--surface2);
+      border-radius: 12px;
+      border: 1px solid var(--border2);
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .waiting-players {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 160px;
+      overflow-y: auto;
+    }
+    .waiting-player-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: var(--surface2);
+      font-size: 13px;
+      font-weight: 600;
+      animation: fadeSlideIn 0.22s ease;
+    }
+    .waiting-player-av {
+      width: 26px; height: 26px;
+      border-radius: 7px;
+      background: var(--grad);
+      display: flex; align-items: center; justify-content: center;
+      font: 900 11px 'Inter', system-ui;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .modal-status {
+      text-align: center;
+      font-size: 12px;
+      color: var(--fg2);
+      font-weight: 500;
+    }
+
+    .btn-start-game {
+      font-family: 'Inter', system-ui;
+      font-size: 15px;
+      font-weight: 800;
+      padding: 13px 20px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      background: var(--grad);
+      color: #fff;
+      box-shadow: 0 4px 18px rgba(124,58,237,0.4);
+      transition: transform 0.15s, opacity 0.15s;
+    }
+    .btn-start-game:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-start-game:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* ── Footer ─────────────────────────────────────────────────────────── */
+    .hub-footer {
+      text-align: center;
+      color: var(--fg2);
+      font-size: 12px;
+      padding-top: 8px;
+    }
+
+    /* ── Scrollbar ──────────────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+    /* ── Responsive ─────────────────────────────────────────────────────── */
+    @media (max-width: 480px) {
+      .hub-wrap { padding: 16px 14px 40px; gap: 20px; }
+      .game-card-banner { height: 100px; }
+      .game-card-emoji { font-size: 48px; }
+    }
+  </style>
 </head>
 <body>
-  <main>
+  <div class="hub-wrap">
 
-    <!-- ── Top Header ─────────────────────────────────────────────────────── -->
-    <div class="header-row">
-      <h1>🏃 Last Runner Standing</h1>
-      <button id="btn-quit" class="hide" aria-label="Quit game">✕ Quit</button>
+    <!-- ── Hero ─────────────────────────────────────────────────────────── -->
+    <div class="hub-hero">
+      <div class="hub-hero-logo">🎮</div>
+      <h1>GameHub</h1>
+      <p>Pick a game, choose your difficulty, and challenge friends in multiplayer</p>
     </div>
 
-    <!-- ── Lobby UI ───────────────────────────────────────────────────────── -->
-    <section id="lobby-ui" class="card" aria-label="Game lobby">
-
-      <div class="lobby-brand">
-        <span class="emoji">🏃‍♂️</span>
-        <h2>Ready to run?</h2>
-        <p>Create a room, join a friend, or go solo</p>
+    <!-- ── Stats strip ──────────────────────────────────────────────────── -->
+    <div class="info-strip" id="stats-strip">
+      <div class="info-card">
+        <div class="info-icon">🏃</div>
+        <div class="info-val" id="stat-runner-best">—</div>
+        <div class="info-lbl">Runner Best</div>
       </div>
-
-      <input
-        type="text"
-        id="player-name"
-        maxlength="14"
-        placeholder="Your name"
-        autocomplete="off"
-        spellcheck="false"
-        aria-label="Player name"
-      >
-
-      <button id="btn-create">🚀 Create Room</button>
-
-      <div class="divider">or join a friend</div>
-
-      <div class="row">
-        <input
-          type="text"
-          id="room-code"
-          maxlength="5"
-          placeholder="ROOM CODE"
-          style="text-transform:uppercase; letter-spacing:0.15em; font-weight:700;"
-          autocomplete="off"
-          spellcheck="false"
-          aria-label="Room code"
-        >
-        <button id="btn-join" class="alt">Join →</button>
+      <div class="info-card">
+        <div class="info-icon">🍶</div>
+        <div class="info-val" id="stat-sort-best">—</div>
+        <div class="info-lbl">Sort Best Lvl</div>
       </div>
-
-      <div class="divider">or</div>
-
-      <button id="btn-solo" class="solo-btn">⚡ Play Solo</button>
-
-    </section>
-
-    <!-- ── Room Waiting UI ────────────────────────────────────────────────── -->
-    <section id="room-ui" class="card hide" aria-label="Waiting room">
-
-      <div class="mut" style="text-align:center; font-weight:600;">
-        Share this code with friends
+      <div class="info-card">
+        <div class="info-icon">🎯</div>
+        <div class="info-val" id="stat-games-played">0</div>
+        <div class="info-lbl">Games Played</div>
       </div>
+    </div>
 
-      <div class="code" id="display-room-code" aria-label="Room code"></div>
+    <!-- ── Games ────────────────────────────────────────────────────────── -->
+    <p class="section-title">Choose a Game</p>
+    <div class="game-grid">
 
-      <div id="players-list" role="list" aria-label="Players in room"></div>
-
-      <button id="btn-start" class="hide">▶ Start Game</button>
-
-      <div class="mut" id="waiting-message" style="text-align:center;"></div>
-
-    </section>
-
-    <!-- ── Game UI ────────────────────────────────────────────────────────── -->
-    <section id="game-ui" class="hide" aria-label="Game">
-
-      <!-- 3-D canvas stage -->
-      <div id="stage">
-
-        <!-- ── HUD: Top bar ──────────────────────────────────────────────── -->
-        <div id="hud-top">
-          <!-- Left: pause + rank -->
-          <div class="hud-group hud-left">
-            <div id="pause" role="button" aria-label="Pause" tabindex="0">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
-                <rect x="1" y="1" width="4" height="12" rx="1.5"/>
-                <rect x="9" y="1" width="4" height="12" rx="1.5"/>
-              </svg>
-            </div>
-            <div class="pill" id="rankPill" aria-label="Rank">
-              <span class="pill-icon">🏅</span><span id="rankVal">1/1</span>
-            </div>
-          </div>
-
-          <!-- Center: lives -->
-          <div class="hud-group hud-center">
-            <div id="livesPill" aria-label="Lives">
-              <span class="heart" data-i="1">❤️</span>
-              <span class="heart" data-i="2">❤️</span>
-              <span class="heart" data-i="3">❤️</span>
-            </div>
-          </div>
-
-          <!-- Right: score + coins -->
-          <div class="hud-group hud-right">
-            <div class="pill" id="scorePill" aria-label="Score">
-              <span class="pill-icon">⭐</span><span id="scoreVal">0</span>
-            </div>
-            <div class="pill" id="coinPill" aria-label="Coins">
-              <span class="pill-icon">🪙</span><span id="coinVal">0</span>
-            </div>
-          </div>
+      <!-- Subway Surfers / Runner -->
+      <div class="game-card game-card--runner">
+        <div class="game-card-banner">
+          <span class="game-card-emoji">🏃</span>
         </div>
-
-        <!-- ── HUD: Top-runner (right side, below score) ─────────────────── -->
-        <div id="topRun" aria-label="Top runner">
-          <span class="top-label">TOP</span>
-          <div class="top-body">
-            <div class="av" id="topAv">?</div>
-            <b id="topSc">0</b>
+        <div class="game-card-body">
+          <div class="game-card-title">Last Runner Standing</div>
+          <div class="game-card-desc">Dodge trains, collect coins, and outlast everyone on the same procedurally generated track.</div>
+          <div class="game-card-tags">
+            <span class="tag">3D</span>
+            <span class="tag">Endless Runner</span>
+            <span class="tag">Multiplayer</span>
           </div>
-        </div>
-
-        <!-- ── HUD: Bottom boost bar ──────────────────────────────────────── -->
-        <div id="boostWrap" aria-label="Boost meter">
-          <span id="boostIcon">⚡</span>
-          <div id="boostTrack">
-            <div id="boostBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-              <div id="boostFill"></div>
+          <div style="margin-top:4px;">
+            <div class="diff-label">🎯 Difficulty</div>
+            <div class="diff-row" id="runner-diffs">
+              <button class="diff-btn selected" data-game="runner" data-diff="easy">🟢 Easy</button>
+              <button class="diff-btn" data-game="runner" data-diff="medium">🟡 Medium</button>
+              <button class="diff-btn" data-game="runner" data-diff="hard">🔴 Hard</button>
+              <button class="diff-btn" data-game="runner" data-diff="expert">💀 Expert</button>
             </div>
-            <span id="boostLabel">BOOST</span>
           </div>
-        </div>
-
-        <!-- ── Countdown / event banner ───────────────────────────────────── -->
-        <div id="banner" aria-live="assertive"></div>
-
-      </div><!-- /#stage -->
-
-      <!-- Leaderboard (multiplayer only) -->
-      <div class="card" id="leaderboard-list" role="list" aria-label="Leaderboard"></div>
-
-      <!-- Game Over card -->
-      <div id="game-over-ui" class="card hide" role="region" aria-label="Game over">
-        <div class="gameover-emoji">💀</div>
-        <h2>Game Over</h2>
-        <div class="gameover-stats">
-          <div class="go-stat">
-            <span class="go-stat-label">Score</span>
-            <span class="go-stat-value" id="final-score">0</span>
-          </div>
-          <div class="go-stat-divider"></div>
-          <div class="go-stat">
-            <span class="go-stat-label">Coins</span>
-            <span class="go-stat-value go-coins" id="final-coins">0</span>
+          <div class="game-card-actions">
+            <button class="btn-play-solo" onclick="playSolo('runner')">⚡ Solo</button>
+            <button class="btn-play-multi" onclick="openMultiModal('runner')">👥 Multiplayer</button>
           </div>
         </div>
       </div>
 
-      <!-- Controls hint -->
-      <div class="controls-hint">
-        <span>⬅ ➡ lanes</span>
-        <span class="hint-dot">·</span>
-        <span>⬆ jump</span>
-        <span class="hint-dot">·</span>
-        <span>⬇ slide</span>
+      <!-- Drink Sort -->
+      <div class="game-card game-card--drink">
+        <div class="game-card-banner">
+          <span class="game-card-emoji">🍶</span>
+          <span class="new-badge">NEW</span>
+        </div>
+        <div class="game-card-body">
+          <div class="game-card-title">Chaos Drink Sort</div>
+          <div class="game-card-desc">Sort the colour-layered bottles until every bottle holds just one colour. Harder than you think.</div>
+          <div class="game-card-tags">
+            <span class="tag">Puzzle</span>
+            <span class="tag">Brain Teaser</span>
+            <span class="tag">Multiplayer</span>
+          </div>
+          <div style="margin-top:4px;">
+            <div class="diff-label">🎯 Difficulty</div>
+            <div class="diff-row" id="drink-diffs">
+              <button class="diff-btn selected" data-game="drink" data-diff="easy">🟢 Easy</button>
+              <button class="diff-btn" data-game="drink" data-diff="medium">🟡 Medium</button>
+              <button class="diff-btn" data-game="drink" data-diff="hard">🔴 Hard</button>
+              <button class="diff-btn" data-game="drink" data-diff="expert">💀 Expert</button>
+            </div>
+          </div>
+          <div class="game-card-actions">
+            <button class="btn-play-solo" onclick="playSolo('drink')">⚡ Solo</button>
+            <button class="btn-play-multi" onclick="openMultiModal('drink')">👥 Multiplayer</button>
+          </div>
+        </div>
       </div>
 
-      <button id="btn-restart" class="hide">↩ Back to Menu</button>
+    </div>
 
-    </section>
+    <!-- ── Leaderboard ───────────────────────────────────────────────────── -->
+    <div class="leaderboard-strip">
+      <div class="lb-header">
+        <div class="lb-title">🏆 Leaderboard</div>
+        <div class="lb-tabs">
+          <button class="lb-tab active" data-tab="all" onclick="switchLbTab('all',this)">All</button>
+          <button class="lb-tab" data-tab="runner" onclick="switchLbTab('runner',this)">Runner</button>
+          <button class="lb-tab" data-tab="drink" onclick="switchLbTab('drink',this)">Sort</button>
+        </div>
+      </div>
+      <div class="lb-list" id="lb-list"></div>
+    </div>
 
-  </main>
+    <!-- ── Footer ───────────────────────────────────────────────────────── -->
+    <div class="hub-footer">GameHub · Solo &amp; Multiplayer · 2 Games Available</div>
 
-  <script type="module" src="/src/main.js"></script>
+  </div><!-- /.hub-wrap -->
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       Multiplayer Modal
+  ══════════════════════════════════════════════════════════════════════ -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal" id="modal">
+
+      <!-- Step 1: Name + action choice -->
+      <div id="modal-step-1">
+        <div class="modal-emoji" id="modal-emoji">👥</div>
+        <div class="modal-title" id="modal-title">Multiplayer</div>
+        <input type="text" id="modal-name" maxlength="14" placeholder="Your name" autocomplete="off" spellcheck="false">
+        <div class="modal-row">
+          <button class="btn-modal btn-modal-primary" onclick="createRoom()">🚀 Create Room</button>
+        </div>
+        <div class="modal-divider">or join a friend</div>
+        <div class="modal-row">
+          <input type="text" id="modal-room-code" maxlength="5" placeholder="ROOM CODE"
+            style="text-transform:uppercase;letter-spacing:0.15em;font-weight:700;flex:1" autocomplete="off" spellcheck="false">
+          <button class="btn-modal btn-modal-primary" onclick="joinRoom()" style="flex:0 0 auto;padding:12px 14px;">Join →</button>
+        </div>
+        <button class="btn-modal btn-modal-cancel" onclick="closeModal()">Cancel</button>
+      </div>
+
+      <!-- Step 2: Waiting room -->
+      <div id="modal-step-2" style="display:none">
+        <div class="modal-emoji">🎮</div>
+        <div class="modal-title">Room Created</div>
+        <div style="font-size:12px;color:var(--fg2);text-align:center;">Share this code with friends</div>
+        <div class="room-code-display" id="modal-room-code-display">—</div>
+        <div class="waiting-players" id="modal-players-list"></div>
+        <div class="modal-status" id="modal-status">Waiting for players…</div>
+        <button class="btn-start-game" id="btn-start-game" disabled onclick="startMultiGame()">▶ Start Game</button>
+        <button class="btn-modal btn-modal-cancel" onclick="leaveRoom()">Leave Room</button>
+      </div>
+
+    </div><!-- /.modal -->
+  </div><!-- /.modal-overlay -->
+
+  <script>
+  // ═══════════════════════════════════════════════════════════════════════
+  //  GameHub — homepage logic
+  // ═══════════════════════════════════════════════════════════════════════
+
+  // ── Selected difficulties ──────────────────────────────────────────────
+  const selectedDiff = { runner: 'easy', drink: 'easy' };
+
+  // ── Wire up difficulty buttons ─────────────────────────────────────────
+  document.querySelectorAll('.diff-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const game = btn.dataset.game;
+      const diff = btn.dataset.diff;
+      selectedDiff[game] = diff;
+      document.querySelectorAll(`.diff-btn[data-game="${game}"]`).forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+    });
+  });
+
+  // ── Solo play ──────────────────────────────────────────────────────────
+  function playSolo(game) {
+    const diff = selectedDiff[game];
+    const page = game === 'runner' ? '/subway-surfers.html' : '/drink-sort.html';
+    window.location.href = `${page}?mode=solo&diff=${diff}`;
+  }
+
+  // ── Multiplayer modal state ────────────────────────────────────────────
+  let currentGame = null;
+  let socket = null;
+  let roomId  = null;
+  let isHost  = false;
+
+  function openMultiModal(game) {
+    currentGame = game;
+    document.getElementById('modal-emoji').textContent  = game === 'runner' ? '🏃' : '🍶';
+    document.getElementById('modal-title').textContent  = game === 'runner' ? 'Runner — Multiplayer' : 'Drink Sort — Multiplayer';
+    showStep(1);
+    document.getElementById('modal-overlay').classList.add('open');
+    connectSocket();
+  }
+
+  function closeModal() {
+    document.getElementById('modal-overlay').classList.remove('open');
+    setTimeout(() => { showStep(1); }, 300);
+  }
+
+  function showStep(n) {
+    document.getElementById('modal-step-1').style.display = n === 1 ? '' : 'none';
+    document.getElementById('modal-step-2').style.display = n === 2 ? '' : 'none';
+  }
+
+  // ── Socket.io ──────────────────────────────────────────────────────────
+  function connectSocket() {
+    if (socket && socket.connected) return;
+    const url = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '/';
+    // lazy-load socket.io client
+    if (window.io) { initSocket(); return; }
+    const s = document.createElement('script');
+    s.src = '/socket.io/socket.io.js';
+    s.onload = initSocket;
+    document.head.appendChild(s);
+  }
+
+  function initSocket() {
+    const url = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '/';
+    socket = io(url);
+
+    socket.on('roomUpdate', data => {
+      roomId = data.roomId;
+      isHost = data.host === socket.id;
+      document.getElementById('modal-room-code-display').textContent = roomId;
+      showStep(2);
+
+      const list = document.getElementById('modal-players-list');
+      list.innerHTML = '';
+      for (const [id, p] of Object.entries(data.players)) {
+        const row = document.createElement('div');
+        row.className = 'waiting-player-row';
+        row.innerHTML = `<div class="waiting-player-av">${p.name[0].toUpperCase()}</div>
+          <span>${p.name}</span>${id === data.host ? ' <span style="margin-left:auto;font-size:10px;color:var(--fg2);font-weight:700">HOST</span>' : ''}`;
+        list.appendChild(row);
+      }
+
+      const count = Object.keys(data.players).length;
+      document.getElementById('modal-status').textContent =
+        isHost ? (count < 2 ? 'Waiting for at least 1 more player…' : `${count} players ready`) : 'Waiting for host to start…';
+
+      const btn = document.getElementById('btn-start-game');
+      btn.disabled = !isHost || count < 1;
+      btn.style.display = isHost ? '' : 'none';
+    });
+
+    socket.on('gameStart', data => {
+      const diff = selectedDiff[currentGame];
+      const page = currentGame === 'runner' ? '/subway-surfers.html' : '/drink-sort.html';
+      // Pass roomId and seed so the game page can re-join
+      window.location.href = `${page}?mode=multi&diff=${diff}&roomId=${roomId}&seed=${data.seed}&name=${encodeURIComponent(getPlayerName())}`;
+    });
+
+    socket.on('error', msg => {
+      // Show error in step 1 (visible at that point) or step 2 status
+      const step1Visible = document.getElementById('modal-step-1').style.display !== 'none';
+      if (step1Visible) {
+        const inp = document.getElementById('modal-room-code');
+        if (inp) { inp.style.borderColor = '#ef4444'; setTimeout(() => inp.style.borderColor = '', 2000); }
+        // Add a small error note
+        const existing = document.getElementById('modal-err');
+        if (existing) existing.remove();
+        const err = document.createElement('div');
+        err.id = 'modal-err';
+        err.style.cssText = 'color:#ef4444;font-size:12px;font-weight:700;text-align:center;';
+        err.textContent = '⚠ ' + msg;
+        document.getElementById('modal-step-1').appendChild(err);
+        setTimeout(() => err.remove(), 3000);
+      } else {
+        document.getElementById('modal-status').textContent = '⚠ ' + msg;
+      }
+    });
+  }
+
+  function getPlayerName() {
+    return document.getElementById('modal-name').value.trim() || 'Player' + Math.floor(Math.random()*1000);
+  }
+
+  function createRoom() {
+    const name = getPlayerName();
+    socket.emit('createRoom', { name, game: currentGame });
+  }
+
+  function joinRoom() {
+    const name  = getPlayerName();
+    const code  = document.getElementById('modal-room-code').value.toUpperCase().trim();
+    if (!code) {
+      // Show inline error before switching steps
+      const inp = document.getElementById('modal-room-code');
+      inp.style.borderColor = '#ef4444';
+      inp.placeholder = 'Enter a code!';
+      setTimeout(() => { inp.style.borderColor = ''; inp.placeholder = 'ROOM CODE'; }, 2000);
+      return;
+    }
+    socket.emit('joinRoom', { roomId: code, name, game: currentGame });
+    // Don't switch step yet — wait for roomUpdate confirmation
+  }
+
+  function startMultiGame() {
+    if (socket && isHost) socket.emit('startGame');
+  }
+
+  function leaveRoom() {
+    if (socket) socket.disconnect();
+    socket = null; roomId = null; isHost = false;
+    closeModal();
+  }
+
+  // ── Leaderboard ────────────────────────────────────────────────────────
+  const SCORES_KEY = 'gamehub_scores';
+
+  function getScores() {
+    try { return JSON.parse(localStorage.getItem(SCORES_KEY)) || []; } catch { return []; }
+  }
+
+  function renderLeaderboard(filter) {
+    const scores = getScores()
+      .filter(s => filter === 'all' || s.game === filter)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 8);
+
+    const list = document.getElementById('lb-list');
+    list.innerHTML = '';
+
+    if (!scores.length) {
+      list.innerHTML = '<div class="lb-empty">No scores yet — play a game to get on the board!</div>';
+      return;
+    }
+
+    const medals = ['🥇','🥈','🥉'];
+    scores.forEach((s, i) => {
+      const row = document.createElement('div');
+      row.className = 'lb-row';
+      row.innerHTML = `
+        <div class="lb-rank">${medals[i] || (i+1)}</div>
+        <div class="lb-name">${s.name || 'Anonymous'}</div>
+        <div class="lb-game-tag">${s.game === 'runner' ? '🏃 Runner' : '🍶 Sort'}</div>
+        <span style="font-size:10px;color:var(--fg2);font-weight:600">${s.diff||''}</span>
+        <div class="lb-score">${s.score.toLocaleString()}</div>`;
+      list.appendChild(row);
+    });
+  }
+
+  let currentLbTab = 'all';
+  function switchLbTab(tab, btn) {
+    currentLbTab = tab;
+    document.querySelectorAll('.lb-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderLeaderboard(tab);
+  }
+
+  // ── Stats strip ────────────────────────────────────────────────────────
+  function updateStats() {
+    const scores = getScores();
+    const runnerBest = scores.filter(s => s.game === 'runner').sort((a,b) => b.score-a.score)[0];
+    const drinkBest  = scores.filter(s => s.game === 'drink').sort((a,b) => b.level-a.level)[0];
+    const total = parseInt(localStorage.getItem('gamehub_games_played') || '0');
+    document.getElementById('stat-runner-best').textContent = runnerBest ? runnerBest.score.toLocaleString() : '—';
+    document.getElementById('stat-sort-best').textContent   = drinkBest  ? `Lvl ${drinkBest.level}` : '—';
+    document.getElementById('stat-games-played').textContent = total;
+  }
+
+  // ── Init ───────────────────────────────────────────────────────────────
+  renderLeaderboard('all');
+  updateStats();
+
+  // Close modal on overlay click
+  document.getElementById('modal-overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('modal-overlay')) closeModal();
+  });
+  </script>
 </body>
 </html>
