@@ -258,6 +258,78 @@
     100% { transform: translateY(60px) scale(0.4); opacity: 0; }
   }
 
+  /* ── Liquid stream overlay (SVG arc between bottles) ────────────────────── */
+  #pour-canvas {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 199;
+    overflow: visible;
+  }
+
+  /* ── Fill-rise animation on the destination bottle layer ────────────────── */
+  /* Applied as inline animation via SMIL on the SVG rect */
+  @keyframes liquidRise {
+    from { clip-path: inset(100% 0 0 0); opacity: 0.6; }
+    to   { clip-path: inset(0% 0 0 0);   opacity: 1; }
+  }
+  .layer-new {
+    animation: liquidRise 0.38s cubic-bezier(0.22,1,0.36,1) forwards;
+  }
+
+  /* ── Surface ripple on landing ──────────────────────────────────────────── */
+  .ripple-ring {
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 201;
+    border: 2px solid currentColor;
+    width: 12px; height: 5px;
+    opacity: 0.9;
+    animation: rippleSpread 0.5s ease-out forwards;
+    transform-origin: center center;
+  }
+  @keyframes rippleSpread {
+    0%   { transform: scale(1);   opacity: 0.8; }
+    100% { transform: scale(3.5); opacity: 0; }
+  }
+
+  /* ── Bubble pop on fill ─────────────────────────────────────────────────── */
+  .bubble {
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 201;
+    opacity: 0.7;
+    animation: bubbleFloat var(--dur, 0.7s) ease-out forwards;
+  }
+  @keyframes bubbleFloat {
+    0%   { transform: translateY(0)  scale(1);   opacity: 0.7; }
+    60%  { opacity: 0.5; }
+    100% { transform: translateY(calc(var(--rise, -20px))) scale(0.3); opacity: 0; }
+  }
+
+  /* ── Bottle tilt during pour ────────────────────────────────────────────── */
+  .bottle-wrap.pouring {
+    animation: bottleTilt 0.55s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes bottleTilt {
+    0%   { transform: rotate(0deg)   translateY(0); }
+    30%  { transform: rotate(-28deg) translateY(-8px); }
+    70%  { transform: rotate(-22deg) translateY(-6px); }
+    100% { transform: rotate(0deg)   translateY(0); }
+  }
+
+  /* ── Bottle receiving flash ─────────────────────────────────────────────── */
+  .bottle-wrap.receiving .bottle-svg {
+    animation: receivePulse 0.4s ease;
+  }
+  @keyframes receivePulse {
+    0%   { filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5)); }
+    40%  { filter: drop-shadow(0 0 18px currentColor) brightness(1.2); }
+    100% { filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5)); }
+  }
+
   /* ═══════════════════════════════════ ACTION BAR ═════════════════════════ */
   .action-bar {
     display: flex;
@@ -546,6 +618,9 @@
   <div id="mp-players-list"></div>
 </div>
 
+<!-- ═══════ POUR STREAM CANVAS (fixed overlay SVG) ═══════ -->
+<svg id="pour-canvas" xmlns="http://www.w3.org/2000/svg"></svg>
+
 <script>
 // ═══════════════════════════════════════════════════════════════════════════════
 //  CHAOS DRINK SORT — Full Game Logic
@@ -747,13 +822,16 @@ function renderBottles() {
     wrap.addEventListener('click', () => onBottleClick(idx));
     wrap.addEventListener('touchend', e => { e.preventDefault(); onBottleClick(idx); }, { passive:false });
 
-    const svgEl = buildBottleSVG(bottle, idx === selected, bw, bh, cap);
+    const svgEl = buildBottleSVG(bottle, idx === selected, bw, bh, cap, idx);
     wrap.appendChild(svgEl);
     grid.appendChild(wrap);
   });
+
+  // Clear pending new-layer markers after render
+  _pendingNewLayers = {};
 }
 
-function buildBottleSVG(bottle, isSelected, bw, bh, cap) {
+function buildBottleSVG(bottle, isSelected, bw, bh, cap, bottleIdx) {
   // SVG bottle shape inspired by the reference screenshot
   const ns   = 'http://www.w3.org/2000/svg';
   const svg  = document.createElementNS(ns, 'svg');
@@ -762,7 +840,7 @@ function buildBottleSVG(bottle, isSelected, bw, bh, cap) {
   svg.setAttribute('height', bh);
   svg.classList.add('bottle-svg');
 
-  const bodyTop    = bh * 0.18;   // where the body starts (below neck)
+  const bodyTop    = bh * 0.18;
   const bodyBottom = bh * 0.95;
   const bodyH      = bodyBottom - bodyTop;
   const bodyX      = bw * 0.10;
@@ -771,10 +849,9 @@ function buildBottleSVG(bottle, isSelected, bw, bh, cap) {
   const neckX      = (bw - neckW) / 2;
   const neckTop    = bh * 0.02;
   const neckH      = bodyTop - neckTop;
-  const rx         = bw * 0.16;   // corner radius
+  const rx         = bw * 0.16;
 
-  // ── Liquid layers ──────────────────────────────────────────────────────
-  // clip to bottle body
+  // ── Liquid layers with clip ──────────────────────────────────────────────
   const clipId = 'clip-' + Math.random().toString(36).slice(2,7);
   const defs   = document.createElementNS(ns, 'defs');
   const clip   = document.createElementNS(ns, 'clipPath');
@@ -787,26 +864,119 @@ function buildBottleSVG(bottle, isSelected, bw, bh, cap) {
   clipRect.setAttribute('rx',     rx);
   clip.appendChild(clipRect);
   defs.appendChild(clip);
+
+  // ── Ripple wave gradient for liquid surface ──────────────────────────────
+  // We'll add a subtle animated gradient shimmer to the top of the liquid surface
+  const waveId = 'wave-' + Math.random().toString(36).slice(2,7);
+  const waveGrad = document.createElementNS(ns, 'linearGradient');
+  waveGrad.setAttribute('id', waveId);
+  waveGrad.setAttribute('x1', '0'); waveGrad.setAttribute('y1', '0');
+  waveGrad.setAttribute('x2', '1'); waveGrad.setAttribute('y2', '0');
+  const ws1 = document.createElementNS(ns, 'stop');
+  ws1.setAttribute('offset', '0%');   ws1.setAttribute('stop-color', 'rgba(255,255,255,0.0)');
+  const ws2 = document.createElementNS(ns, 'stop');
+  ws2.setAttribute('offset', '45%');  ws2.setAttribute('stop-color', 'rgba(255,255,255,0.18)');
+  const ws3 = document.createElementNS(ns, 'stop');
+  ws3.setAttribute('offset', '55%');  ws3.setAttribute('stop-color', 'rgba(255,255,255,0.28)');
+  const ws4 = document.createElementNS(ns, 'stop');
+  ws4.setAttribute('offset', '100%'); ws4.setAttribute('stop-color', 'rgba(255,255,255,0.0)');
+  waveGrad.appendChild(ws1); waveGrad.appendChild(ws2);
+  waveGrad.appendChild(ws3); waveGrad.appendChild(ws4);
+  defs.appendChild(waveGrad);
   svg.appendChild(defs);
 
-  // Each layer fills from bottom
+  // How many new layers to animate for this bottle
+  const newLayerCount = _pendingNewLayers[bottleIdx] || 0;
+  const newLayerStart = bottle.length - newLayerCount; // first new layer index
+
   const layerH = bodyH / cap;
   for (let i = 0; i < bottle.length; i++) {
-    const colId = bottle[i];
+    const colId  = bottle[i];
     const colHex = COLOUR_PALETTE.find(c => c.id === colId)?.hex || '#888';
+    const y      = bodyBottom - (i + 1) * layerH;
+    const isNew  = i >= newLayerStart;
+
     const rect = document.createElementNS(ns, 'rect');
-    // i=0 is bottom, so y counts from bottom
-    const y = bodyBottom - (i + 1) * layerH;
-    rect.setAttribute('x',       bodyX);
-    rect.setAttribute('y',       y);
-    rect.setAttribute('width',   bodyW);
-    rect.setAttribute('height',  layerH + 1); // +1 to avoid gaps
-    rect.setAttribute('fill',    colHex);
-    rect.setAttribute('clip-path', `url(#${clipId})`);
+    rect.setAttribute('x',          bodyX);
+    rect.setAttribute('width',      bodyW);
+    rect.setAttribute('height',     layerH + 1);
+    rect.setAttribute('fill',       colHex);
+    rect.setAttribute('clip-path',  `url(#${clipId})`);
+
+    if (isNew) {
+      // ── Fill-rise: layer starts from its final y but clipped to 0 height, rises up
+      // We animate using a nested clipPath + SMIL animate
+      const riseClipId = 'rclip-' + Math.random().toString(36).slice(2,9);
+      const riseClip   = document.createElementNS(ns, 'clipPath');
+      riseClip.setAttribute('id', riseClipId);
+
+      const riseRect = document.createElementNS(ns, 'rect');
+      riseRect.setAttribute('x',     bodyX);
+      riseRect.setAttribute('width', bodyW);
+      riseRect.setAttribute('height', layerH + 1);
+      // Start clipped (height = 0 from bottom, revealing upward)
+      const startY = y + layerH + 1; // fully hidden (start at bottom of slot)
+      const endY   = y;              // fully revealed
+      riseRect.setAttribute('y', startY);
+
+      // SMIL animation: animate the y attribute upward
+      const anim = document.createElementNS(ns, 'animate');
+      anim.setAttribute('attributeName', 'y');
+      anim.setAttribute('from',   startY);
+      anim.setAttribute('to',     endY);
+      const delay = (i - newLayerStart) * 80; // stagger each layer
+      anim.setAttribute('begin',    delay + 'ms');
+      anim.setAttribute('dur',      '360ms');
+      anim.setAttribute('calcMode', 'spline');
+      anim.setAttribute('keySplines', '0.22 1 0.36 1'); // ease-out spring
+      anim.setAttribute('fill',    'freeze');
+      riseRect.appendChild(anim);
+
+      riseClip.appendChild(riseRect);
+      defs.appendChild(riseClip);
+
+      rect.setAttribute('y', y);
+      rect.setAttribute('clip-path', `url(#${riseClipId})`);
+
+      // Surface shimmer wave on the top edge of new layer
+      if (i === bottle.length - 1) {
+        const shimmer = document.createElementNS(ns, 'rect');
+        shimmer.setAttribute('x',      bodyX);
+        shimmer.setAttribute('y',      y);
+        shimmer.setAttribute('width',  bodyW);
+        shimmer.setAttribute('height', 4);
+        shimmer.setAttribute('fill',   `url(#${waveId})`);
+        shimmer.setAttribute('clip-path', `url(#${clipId})`);
+        shimmer.setAttribute('opacity', '0');
+        // Fade in after rise completes
+        const shimmerAnim = document.createElementNS(ns, 'animate');
+        shimmerAnim.setAttribute('attributeName', 'opacity');
+        shimmerAnim.setAttribute('values',  '0;0.9;0');
+        shimmerAnim.setAttribute('begin',   (delay + 360) + 'ms');
+        shimmerAnim.setAttribute('dur',     '600ms');
+        shimmerAnim.setAttribute('fill',    'freeze');
+        shimmer.appendChild(shimmerAnim);
+        // Also animate y to follow the rise
+        const shimmerY = document.createElementNS(ns, 'animate');
+        shimmerY.setAttribute('attributeName', 'y');
+        shimmerY.setAttribute('from',   startY);
+        shimmerY.setAttribute('to',     y);
+        shimmerY.setAttribute('begin',  delay + 'ms');
+        shimmerY.setAttribute('dur',    '360ms');
+        shimmerY.setAttribute('calcMode', 'spline');
+        shimmerY.setAttribute('keySplines', '0.22 1 0.36 1');
+        shimmerY.setAttribute('fill',   'freeze');
+        shimmer.appendChild(shimmerY);
+        svg.appendChild(shimmer);
+      }
+    } else {
+      rect.setAttribute('y', y);
+    }
+
     svg.appendChild(rect);
   }
 
-  // ── Bottle body outline (glass look) ──────────────────────────────────
+  // ── Glass body outline ───────────────────────────────────────────────────
   const body = document.createElementNS(ns, 'rect');
   body.setAttribute('x',       bodyX);
   body.setAttribute('y',       bodyTop);
@@ -818,7 +988,7 @@ function buildBottleSVG(bottle, isSelected, bw, bh, cap) {
   body.setAttribute('stroke-width', isSelected ? '2.5' : '1.5');
   svg.appendChild(body);
 
-  // ── Glass sheen ────────────────────────────────────────────────────────
+  // ── Glass sheen ──────────────────────────────────────────────────────────
   const sheen = document.createElementNS(ns, 'rect');
   sheen.setAttribute('x',       bodyX + bodyW * 0.65);
   sheen.setAttribute('y',       bodyTop + bodyH * 0.05);
@@ -829,7 +999,7 @@ function buildBottleSVG(bottle, isSelected, bw, bh, cap) {
   sheen.setAttribute('clip-path', `url(#${clipId})`);
   svg.appendChild(sheen);
 
-  // ── Neck ───────────────────────────────────────────────────────────────
+  // ── Neck ─────────────────────────────────────────────────────────────────
   const neck = document.createElementNS(ns, 'rect');
   neck.setAttribute('x',       neckX);
   neck.setAttribute('y',       neckTop);
@@ -841,7 +1011,7 @@ function buildBottleSVG(bottle, isSelected, bw, bh, cap) {
   neck.setAttribute('stroke-width', isSelected ? '2.5' : '1.5');
   svg.appendChild(neck);
 
-  // ── Cork / cap (if full and solved) ───────────────────────────────────
+  // ── Cork / cap (if full and solved) ──────────────────────────────────────
   if (isBottleSolved(bottle) && bottle.length > 0) {
     const corkW = neckW + 4;
     const cork  = document.createElementNS(ns, 'rect');
@@ -853,6 +1023,20 @@ function buildBottleSVG(bottle, isSelected, bw, bh, cap) {
     cork.setAttribute('fill',    '#c8904a');
     cork.setAttribute('stroke',  '#a07030');
     cork.setAttribute('stroke-width', '1');
+
+    // Cork pop animation when bottle is just solved
+    if (newLayerCount > 0) {
+      const corkAnim = document.createElementNS(ns, 'animate');
+      corkAnim.setAttribute('attributeName', 'y');
+      corkAnim.setAttribute('values',  `${neckTop - 6}; ${neckTop - 14}; ${neckTop - 6}`);
+      corkAnim.setAttribute('begin',   '400ms');
+      corkAnim.setAttribute('dur',     '350ms');
+      corkAnim.setAttribute('calcMode','spline');
+      corkAnim.setAttribute('keySplines','0.34 1.56 0.64 1; 0.36 0 0.66 0');
+      corkAnim.setAttribute('fill',    'freeze');
+      cork.appendChild(corkAnim);
+    }
+
     svg.appendChild(cork);
   }
 
@@ -883,17 +1067,24 @@ function onBottleClick(idx) {
     // Shake target bottle
     const wrap = document.getElementById(`bottle-wrap-${idx}`);
     if (wrap) {
-      wrap.querySelector('.bottle-svg')?.parentElement?.classList.add('shake');
-      setTimeout(() => wrap.querySelector('.bottle-svg')?.parentElement?.classList.remove('shake'), 400);
+      wrap.classList.add('shake');
+      setTimeout(() => wrap.classList.remove('shake'), 400);
     }
+    selected = -1;
+    renderBottles();
+    updateHud();
+    return;
   }
-  selected = -1;
-  renderBottles();
-  updateHud();
 
-  if (checkWin()) {
-    setTimeout(showWin, 300);
-  }
+  selected = -1;
+  // Small delay so animatePour can read rects before the DOM is rebuilt
+  setTimeout(() => {
+    renderBottles();
+    updateHud();
+    if (checkWin()) {
+      setTimeout(showWin, 420);
+    }
+  }, 40);
 }
 
 function tryPour(from, to) {
@@ -923,7 +1114,7 @@ function tryPour(from, to) {
   history.push({ bottles: bottles.map(b => [...b]), undosLeft, moveCount });
   if (history.length > 20) history.shift();
 
-  // Pour animation
+  // Pour animation — fires BEFORE we mutate state so rects are still correct
   animatePour(from, to, topSrc, move);
 
   // Do the pour
@@ -1091,27 +1282,150 @@ function saveScore() {
   } catch(e) {}
 }
 
-// ── Pour animation ────────────────────────────────────────────────────────────
-function animatePour(fromIdx, toIdx, colId, count) {
-  const colHex = COLOUR_PALETTE.find(c => c.id === colId)?.hex || '#888';
-  const fromEl = document.getElementById(`bottle-wrap-${fromIdx}`);
-  const toEl   = document.getElementById(`bottle-wrap-${toIdx}`);
+// ── Pour animation — full system ──────────────────────────────────────────────
+// State shared between animatePour and renderBottles so we know which layers are "new"
+let _pendingNewLayers = {}; // { bottleIdx: count_of_new_layers }
+
+function animatePour(fromIdx, toIdx, colId, moveCount_) {
+  const colHex  = COLOUR_PALETTE.find(c => c.id === colId)?.hex || '#888';
+  const fromEl  = document.getElementById(`bottle-wrap-${fromIdx}`);
+  const toEl    = document.getElementById(`bottle-wrap-${toIdx}`);
   if (!fromEl || !toEl) return;
 
   const fromRect = fromEl.getBoundingClientRect();
   const toRect   = toEl.getBoundingClientRect();
 
-  for (let i = 0; i < Math.min(count, 4); i++) {
+  // ── 1. Tilt the source bottle ────────────────────────────────────────────
+  fromEl.classList.remove('pouring');
+  void fromEl.offsetWidth; // force reflow to restart animation
+  fromEl.classList.add('pouring');
+  setTimeout(() => fromEl.classList.remove('pouring'), 600);
+
+  // ── 2. Arcing liquid stream (SVG path on the overlay canvas) ────────────
+  const canvas = document.getElementById('pour-canvas');
+  const streamId = 'stream-' + fromIdx + '-' + toIdx;
+
+  // Source point: top-center of source bottle
+  const sx = fromRect.left + fromRect.width  / 2;
+  const sy = fromRect.top  + fromRect.height * 0.15;
+  // Dest point: top-center of destination bottle
+  const dx = toRect.left  + toRect.width  / 2;
+  const dy = toRect.top   + toRect.height * 0.15;
+
+  // Control point: arc upward if bottles are on same level, otherwise natural arc
+  const cx = (sx + dx) / 2;
+  const cy = Math.min(sy, dy) - Math.abs(dx - sx) * 0.35 - 20;
+
+  const STREAM_DURATION = 400; // ms
+
+  // Create stream path
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  path.id = streamId;
+  path.setAttribute('d', `M ${sx} ${sy} Q ${cx} ${cy} ${dx} ${dy}`);
+  path.setAttribute('fill', 'none');
+  path.setAttribute('stroke', colHex);
+  path.setAttribute('stroke-width', '5');
+  path.setAttribute('stroke-linecap', 'round');
+  path.setAttribute('opacity', '0.88');
+
+  // Animate with stroke-dashoffset trick
+  const pathLen = 200; // approximate
+  path.setAttribute('stroke-dasharray',  pathLen);
+  path.setAttribute('stroke-dashoffset', pathLen);
+
+  // Animate draw-in then draw-out
+  path.style.transition = `stroke-dashoffset ${STREAM_DURATION * 0.5}ms ease-in`;
+  canvas.appendChild(path);
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      path.setAttribute('stroke-dashoffset', '0');
+      // After draw-in, shrink width to simulate thinning stream
+      setTimeout(() => {
+        path.setAttribute('stroke-width', '3');
+        path.style.opacity = '0.6';
+      }, STREAM_DURATION * 0.4);
+      // Remove after stream ends
+      setTimeout(() => {
+        path.style.transition = 'opacity 0.15s';
+        path.style.opacity    = '0';
+        setTimeout(() => path.remove(), 160);
+      }, STREAM_DURATION * 0.85);
+    });
+  });
+
+  // ── 3. Falling drop particles along the arc ──────────────────────────────
+  const dropCount = Math.min(moveCount_ * 2 + 2, 8);
+  for (let i = 0; i < dropCount; i++) {
     setTimeout(() => {
+      // Interpolate a point along the quadratic bezier
+      const t  = 0.3 + (i / dropCount) * 0.5;
+      const bx = (1-t)*(1-t)*sx + 2*(1-t)*t*cx + t*t*dx;
+      const by = (1-t)*(1-t)*sy + 2*(1-t)*t*cy + t*t*dy;
+
       const drop = document.createElement('div');
-      drop.className = 'pour-drop';
+      drop.className  = 'pour-drop';
       drop.style.background = colHex;
-      drop.style.left  = (fromRect.left + fromRect.width / 2 - 5 + (Math.random()-0.5)*8) + 'px';
-      drop.style.top   = (fromRect.top  + 10) + 'px';
+      drop.style.width  = (5 + Math.random() * 5) + 'px';
+      drop.style.height = drop.style.width;
+      drop.style.left   = (bx - 4 + (Math.random() - 0.5) * 6) + 'px';
+      drop.style.top    = (by - 4) + 'px';
       document.body.appendChild(drop);
-      setTimeout(() => drop.remove(), 500);
-    }, i * 80);
+      setTimeout(() => drop.remove(), 550);
+    }, i * 40);
   }
+
+  // ── 4. Ripple rings on the destination bottle surface ───────────────────
+  setTimeout(() => {
+    const rippleCount = Math.min(moveCount_, 3);
+    for (let r = 0; r < rippleCount; r++) {
+      setTimeout(() => {
+        const ring = document.createElement('div');
+        ring.className = 'ripple-ring';
+        ring.style.color = colHex;
+        ring.style.borderColor = colHex;
+        ring.style.left = (dx - 6 + (Math.random()-0.5)*10) + 'px';
+        ring.style.top  = (dy + toRect.height * 0.6 + r * 3)  + 'px';
+        document.body.appendChild(ring);
+        setTimeout(() => ring.remove(), 520);
+      }, r * 70);
+    }
+  }, STREAM_DURATION * 0.6);
+
+  // ── 5. Bubbles rising inside destination bottle ──────────────────────────
+  setTimeout(() => {
+    const bubbleCount = Math.min(moveCount_ + 1, 5);
+    for (let b = 0; b < bubbleCount; b++) {
+      setTimeout(() => {
+        const sz   = 3 + Math.random() * 4;
+        const rise = -(12 + Math.random() * 18);
+        const bub  = document.createElement('div');
+        bub.className = 'bubble';
+        bub.style.setProperty('--dur',  (0.5 + Math.random() * 0.4) + 's');
+        bub.style.setProperty('--rise', rise + 'px');
+        bub.style.background   = colHex;
+        bub.style.width        = sz + 'px';
+        bub.style.height       = sz + 'px';
+        bub.style.left  = (dx - sz/2 + (Math.random()-0.5) * toRect.width * 0.5) + 'px';
+        bub.style.top   = (dy + toRect.height * 0.65) + 'px';
+        document.body.appendChild(bub);
+        setTimeout(() => bub.remove(), 1100);
+      }, b * 60);
+    }
+  }, STREAM_DURATION * 0.7);
+
+  // ── 6. Mark the destination bottle so renderBottles animates new layers ──
+  _pendingNewLayers[toIdx] = moveCount_;
+
+  // Trigger receiving highlight on the target wrap
+  setTimeout(() => {
+    const toWrap = document.getElementById(`bottle-wrap-${toIdx}`);
+    if (toWrap) {
+      toWrap.style.setProperty('--highlight-color', colHex);
+      toWrap.classList.add('receiving');
+      setTimeout(() => toWrap.classList.remove('receiving'), 500);
+    }
+  }, STREAM_DURATION * 0.5);
 }
 
 // ── Multiplayer ───────────────────────────────────────────────────────────────
